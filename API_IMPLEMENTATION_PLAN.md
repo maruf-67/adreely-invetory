@@ -10,7 +10,7 @@
 - **Routes:** Defined in `routes/api.php` (API endpoints), `routes/web.php` (web routes)
 - **Authentication:** Laravel’s built-in system, with Sanctum for API token authentication
 - **Permissions:** Likely using Spatie’s Permission package (based on migration names)
-- **Database:** SQLite for development/testing
+- **Database:** MySQL for development/testing
 - **Testing:** PHPUnit, with test scaffolding in `tests/`
 - **Seeders/Factories:** For generating test data
 
