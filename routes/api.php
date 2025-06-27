@@ -23,7 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 
-// Multiple roles
+    // Multiple roles
     Route::middleware(['role:admin|super-admin'])->get('/super', function () {
         // ...
     });
@@ -53,17 +53,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('purchase-orders', PurchaseOrderController::class)
             ->except(['update', 'destroy']);
 
-        Route::post('/purchase-orders/{purchaseOrder}/deliver',
-            [PurchaseOrderController::class, 'deliverOrder']);
+        Route::post(
+            '/purchase-orders/{purchaseOrder}/deliver',
+            [PurchaseOrderController::class, 'deliverOrder']
+        );
 
-//        GET     /api/suppliers           List suppliers
-//            POST    /api/suppliers          Create new supplier
-//
-//POST    /api/purchase-orders    Create purchase order
-//GET     /api/purchase-orders    List all purchase orders
-//POST    /api/purchase-orders/{id}/deliver  Mark order as delivered
+        //        GET     /api/suppliers           List suppliers
+        //            POST    /api/suppliers          Create new supplier
+        //
+        //POST    /api/purchase-orders    Create purchase order
+        //GET     /api/purchase-orders    List all purchase orders
+        //POST    /api/purchase-orders/{id}/deliver  Mark order as delivered
     });
-// Combined with other middleware
+    // Combined with other middleware
     Route::middleware(['auth:sanctum', 'role:manager'])->put('/update', function () {
         // ...
     });
