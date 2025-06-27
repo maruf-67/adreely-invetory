@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class ChequePayment extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'related_type',
+        'related_id',
+        'status',
+        'amount',
+        'bank_name',
+        'cheque_number',
+        'updated_by',
+    ];
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    // Dynamic relation for either 'purchase_order' or 'sales_order'
+    public function related()
+    {
+        return $this->morphTo();
+    }
+}
