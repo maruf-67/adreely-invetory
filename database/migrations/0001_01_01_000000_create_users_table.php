@@ -14,9 +14,15 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('phone')->nullable();
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('image')->nullable();
+            $table->string('address')->nullable();
+            $table->decimal('previous_due', 15, 2)->nullable();
+            $table->decimal('previous_credit', 15, 2)->nullable();
+            $table->enum('user_type', ['admin', 'staff', 'supplier', 'retailer', 'dealer', 'wholesaler', 'guest'])->default('guest');
             $table->string('password');
+            $table->timestamp('email_verified_at')->nullable(); // keep for future reference
             $table->rememberToken();
             $table->timestamps();
         });
