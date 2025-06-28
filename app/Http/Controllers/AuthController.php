@@ -21,10 +21,11 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'user_type' => 'admin',
             'password' => Hash::make($validated['password']),
         ]);
 
-        // Assign default role
+        // Assign admin role
         $user->assignRole('admin');
 
         // Create token
@@ -38,7 +39,7 @@ class AuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'email_verified_at' => $user->email_verified_at,
+                    'user_type' => $user->user_type,
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                     'roles' => $user->getRoleNames()->all(),

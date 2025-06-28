@@ -16,12 +16,15 @@ class EnsureEmailIsVerified
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user() ||
-            ($request->user() instanceof MustVerifyEmail &&
-            ! $request->user()->hasVerifiedEmail())) {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+        // Only require email verification for admin and staff
+        if (in_array($user->user_type, ['admin', 'staff']) &&
+            ($user instanceof MustVerifyEmail && !$user->hasVerifiedEmail())) {
             return response()->json(['message' => 'Your email address is not verified.'], 409);
         }
-
         return $next($request);
     }
 }

@@ -14,7 +14,10 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|exists:users,id',
             'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
             'email' => 'required|email|unique:users,email,' . $request->user_id,
+            'image' => 'nullable|string',
+            'address' => 'nullable|string',
             'password' => 'nullable|string|min:8|confirmed',
         ]);
 
@@ -28,8 +31,9 @@ class UserController extends Controller
 
         $user = User::findOrFail($request->user_id);
 
-        $user->name = $request->name;
-        $user->email = $request->email;
+        $user->fill($request->only([
+            'name', 'phone', 'email', 'image', 'address',
+        ]));
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
