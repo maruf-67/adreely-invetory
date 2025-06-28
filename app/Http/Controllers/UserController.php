@@ -35,6 +35,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email,' . $request->user_id,
             'image' => 'nullable|file|image|max:2048',
             'address' => 'nullable|string',
+            'parties_type' => 'nullable|in:Regular,Priority',
             'password' => 'nullable|string|min:8',
         ]);
 
@@ -53,6 +54,7 @@ class UserController extends Controller
             'phone',
             'email',
             'address',
+            'parties_type',
         ]));
 
         // Handle image upload
@@ -99,6 +101,7 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'email' => 'required|email|unique:users,email',
             'user_type' => 'required|in:staff,supplier,retailer,dealer,wholesaler,guest',
+            'parties_type' => 'nullable|in:Regular,Priority',
             'image' => 'nullable|file|image|max:2048',
             'address' => 'nullable|string',
             'previous_due' => 'nullable|numeric',
@@ -123,7 +126,8 @@ class UserController extends Controller
             'address',
             'previous_due',
             'previous_credit',
-            'current_balance'
+            'current_balance',
+            'parties_type'
         ]);
         $data['password'] = Hash::make($request->password);
 
@@ -160,6 +164,7 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'email' => 'required|email|unique:users,email,' . $id,
             'user_type' => 'required|in:staff,supplier,retailer,dealer,wholesaler,guest',
+            'parties_type' => 'nullable|in:Regular,Priority',
             'image' => 'nullable|file|image|max:2048',
             'address' => 'nullable|string',
             'previous_due' => 'nullable|numeric',
@@ -192,7 +197,8 @@ class UserController extends Controller
             'address',
             'previous_due',
             'previous_credit',
-            'current_balance'
+            'current_balance',
+            'parties_type'
         ]));
 
         // Handle image upload

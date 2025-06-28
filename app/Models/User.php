@@ -29,6 +29,7 @@ class User extends Authenticatable
         'previous_credit',
         'current_balance',
         'user_type',
+        'parties_type',
         'password',
         'email_verified_at', // keep for future reference
     ];
