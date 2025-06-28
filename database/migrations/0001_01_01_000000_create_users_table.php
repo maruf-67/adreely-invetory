@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->decimal('previous_due', 15, 2)->nullable();
             $table->decimal('previous_credit', 15, 2)->nullable();
+            $table->decimal('current_balance', 15, 2)->default(0.00);
             $table->enum('user_type', ['admin', 'staff', 'supplier', 'retailer', 'dealer', 'wholesaler', 'guest'])->default('guest');
             $table->string('password');
             $table->timestamp('email_verified_at')->nullable(); // keep for future reference
