@@ -20,6 +20,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(['role:admin|super-admin|staff'])->controller(UserController::class)->prefix('user')->group(function () {
         Route::put('/profile-update', 'profileUpdate');
         Route::get('/{id}', 'getUser');
+        Route::post('/create', 'createUser');
+        Route::put('/update', 'updateUser');
         // Add more user-related routes here as needed
     });
 
