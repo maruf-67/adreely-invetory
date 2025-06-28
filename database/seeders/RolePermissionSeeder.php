@@ -14,54 +14,54 @@ class RolePermissionSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create permissions
+        // Create only the permissions needed for admin and staff
         $permissions = [
-            'create-post',
-            'edit-post',
-            'delete-post',
-            'view-post',
-            'manage-users'
+            'manage-users',
+            'manage-orders',
+            'view-reports',
+            'manage-products',
         ];
-
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // Create roles and assign permissions
-        $superAdmin = Role::create(['name' => 'super-admin']);
-        $superAdmin->givePermissionTo(Permission::all());
+        // Create roles
+        $superAdmin = Role::firstOrCreate(['name' => 'super-admin']);
+        $admin = Role::firstOrCreate(['name' => 'admin']);
+        $staff = Role::firstOrCreate(['name' => 'staff']);
 
-        $admin = Role::create(['name' => 'admin']);
-        $admin->givePermissionTo([
-            'create-post',
-            'edit-post',
-            'delete-post',
-            'view-post'
-        ]);
+        // Assign permissions
+        $superAdmin->syncPermissions(Permission::all());
+        $admin->syncPermissions(['manage-users', 'manage-orders', 'view-reports', 'manage-products']);
+        $staff->syncPermissions(['manage-orders']);
 
-        $userRole = Role::create(['name' => 'user']);
-        $userRole->givePermissionTo('view-post');
-
-        // Create test users
-        $superAdminUser = User::factory()->create([
-            'name' => 'Super Admin',
+        // Create super-admin user
+        $superAdminUser = User::firstOrCreate([
             'email' => 'super@admin.com',
-            'password' => bcrypt('password')
+        ], [
+            'name' => 'Super Admin',
+            'password' => bcrypt('superpassword'),
+            'user_type' => 'admin',
         ]);
         $superAdminUser->assignRole('super-admin');
 
-        $adminUser = User::factory()->create([
-            'name' => 'Admin User',
+        // Optionally, create an admin and staff user for testing
+        $adminUser = User::firstOrCreate([
             'email' => 'admin@example.com',
-            'password' => bcrypt('password')
+        ], [
+            'name' => 'Admin User',
+            'password' => bcrypt('adminpassword'),
+            'user_type' => 'admin',
         ]);
         $adminUser->assignRole('admin');
 
-        $regularUser = User::factory()->create([
-            'name' => 'Regular User',
-            'email' => 'user@example.com',
-            'password' => bcrypt('password')
+        $staffUser = User::firstOrCreate([
+            'email' => 'staff@example.com',
+        ], [
+            'name' => 'Staff User',
+            'password' => bcrypt('staffpassword'),
+            'user_type' => 'staff',
         ]);
-        $regularUser->assignRole('user');
+        $staffUser->assignRole('staff');
     }
 }
