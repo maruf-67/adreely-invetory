@@ -37,6 +37,11 @@ class UserController extends Controller
 
         // Handle image upload
         if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($user->image && file_exists(public_path($user->image))) {
+                unlink(public_path($user->image));
+            }
+            
             $image = $request->file('image');
             $imageName = 'user_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('uploads/users'), $imageName);
@@ -144,6 +149,11 @@ class UserController extends Controller
 
         // Handle image upload
         if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($user->image && file_exists(public_path($user->image))) {
+                unlink(public_path($user->image));
+            }
+            
             $image = $request->file('image');
             $imageName = 'user_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('uploads/users'), $imageName);
@@ -160,6 +170,24 @@ class UserController extends Controller
             'status' => true,
             'message' => 'User updated successfully',
             'user' => $user,
+        ]);
+    }
+
+    // Delete a user
+    public function deleteUser($id)
+    {
+        $user = User::findOrFail($id);
+        
+        // Delete user image if exists
+        if ($user->image && file_exists(public_path($user->image))) {
+            unlink(public_path($user->image));
+        }
+        
+        $user->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'User deleted successfully',
         ]);
     }
 }

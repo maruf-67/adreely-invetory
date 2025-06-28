@@ -22,61 +22,31 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', 'getUser');
         Route::post('/create', 'createUser');
         Route::put('/update', 'updateUser');
-        // Add more user-related routes here as needed
-    });
-
-
-
-    Route::middleware(['role:admin'])->get('/admin', function () {
-        return response()->json(['message' => 'Admin access granted']);
-    });
-
-
-
-    // Multiple roles
-    Route::middleware(['role:admin|super-admin'])->get('/super', function () {
-        // ...
+        Route::delete('/{id}', 'deleteUser');
     });
 
     Route::middleware(['auth:sanctum', 'role:admin|super-admin'])->group(function () {
+        // Products
         Route::post('/products', [ProductController::class, 'create']);
         Route::get('/products', [ProductController::class, 'index']);
         Route::get('/products/{id}', [ProductController::class, 'show']);
         Route::put('/products/{id}', [ProductController::class, 'update']);
         Route::delete('/products/{id}', [ProductController::class, 'delete']);
-    });
 
-    // routes/api.php
-    Route::middleware(['auth:sanctum', 'role:admin|super-admin'])->prefix('inventory')->group(function () {
-        Route::post('/products/{product}/add-stock', [InventoryController::class, 'addStock']);
-        Route::post('/products/{product}/remove-stock', [InventoryController::class, 'removeStock']);
-        Route::get('/products/{product}/stock-history', [InventoryController::class, 'stockHistory']);
-        Route::get('/low-stock-alerts', [InventoryController::class, 'lowStockAlerts']);
-    });
+        // Inventory
+        Route::prefix('inventory')->group(function () {
+            Route::post('/products/{product}/add-stock', [InventoryController::class, 'addStock']);
+            Route::post('/products/{product}/remove-stock', [InventoryController::class, 'removeStock']);
+            Route::get('/products/{product}/stock-history', [InventoryController::class, 'stockHistory']);
+            Route::get('/low-stock-alerts', [InventoryController::class, 'lowStockAlerts']);
+        });
 
-    // routes/api.php
-    Route::middleware(['auth:sanctum', 'role:admin|super-admin'])->group(function () {
         // Suppliers
         Route::apiResource('suppliers', SupplierController::class);
 
         // Purchase Orders
         Route::apiResource('purchase-orders', PurchaseOrderController::class)
             ->except(['update', 'destroy']);
-
-        Route::post(
-            '/purchase-orders/{purchaseOrder}/deliver',
-            [PurchaseOrderController::class, 'deliverOrder']
-        );
-
-        //        GET     /api/suppliers           List suppliers
-        //            POST    /api/suppliers          Create new supplier
-        //
-        //POST    /api/purchase-orders    Create purchase order
-        //GET     /api/purchase-orders    List all purchase orders
-        //POST    /api/purchase-orders/{id}/deliver  Mark order as delivered
-    });
-    // Combined with other middleware
-    Route::middleware(['auth:sanctum', 'role:manager'])->put('/update', function () {
-        // ...
+        Route::post('/purchase-orders/{purchaseOrder}/deliver', [PurchaseOrderController::class, 'deliverOrder']);
     });
 });
