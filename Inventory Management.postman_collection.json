@@ -256,6 +256,12 @@
 									"type": "text"
 								},
 								{
+									"key": "parties_type",
+									"value": "Regular",
+									"description": "Regular, Priority",
+									"type": "text"
+								},
+								{
 									"key": "image",
 									"type": "file",
 									"src": []
@@ -358,6 +364,12 @@
 								{
 									"key": "user_type",
 									"value": "supplier",
+									"type": "text"
+								},
+								{
+									"key": "parties_type",
+									"value": "Regular",
+									"description": "Regular, Priority",
 									"type": "text"
 								},
 								{
