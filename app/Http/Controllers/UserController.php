@@ -16,7 +16,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'email' => 'required|email|unique:users,email,' . $request->user_id,
-            'image' => 'nullable|string',
+            'image' => 'nullable|file|image|max:2048',
             'address' => 'nullable|string',
             'password' => 'nullable|string|min:8|confirmed',
         ]);
@@ -32,8 +32,16 @@ class UserController extends Controller
         $user = User::findOrFail($request->user_id);
 
         $user->fill($request->only([
-            'name', 'phone', 'email', 'image', 'address',
+            'name', 'phone', 'email', 'address',
         ]));
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = 'user_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('uploads/users'), $imageName);
+            $user->image = 'uploads/users/' . $imageName;
+        }
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
@@ -44,6 +52,16 @@ class UserController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'User updated successfully',
+            'user' => $user,
+        ]);
+    }
+
+    // Get user profile by ID
+    public function getUser($id)
+    {
+        $user = User::findOrFail($id);
+        return response()->json([
+            'status' => true,
             'user' => $user,
         ]);
     }

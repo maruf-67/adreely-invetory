@@ -40,7 +40,7 @@ class RolePermissionSeeder extends Seeder
             'email' => 'super@admin.com',
         ], [
             'name' => 'Super Admin',
-            'password' => bcrypt('superpassword'),
+            'password' => bcrypt('12345678'),
             'user_type' => 'admin',
         ]);
         $superAdminUser->assignRole('super-admin');
