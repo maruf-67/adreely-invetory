@@ -9,6 +9,23 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
+
+    // Get user profile
+    public function profile(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found',
+            ], 404);
+        }
+        return response()->json([
+            'status' => true,
+            'user' => $user,
+        ]);
+    }
+
     public function profileUpdate(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -18,7 +35,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email,' . $request->user_id,
             'image' => 'nullable|file|image|max:2048',
             'address' => 'nullable|string',
-            'password' => 'nullable|string|min:8|confirmed',
+            'password' => 'nullable|string|min:8',
         ]);
 
         if ($validator->fails()) {
@@ -32,7 +49,10 @@ class UserController extends Controller
         $user = User::findOrFail($request->user_id);
 
         $user->fill($request->only([
-            'name', 'phone', 'email', 'address',
+            'name',
+            'phone',
+            'email',
+            'address',
         ]));
 
         // Handle image upload
@@ -41,7 +61,7 @@ class UserController extends Controller
             if ($user->image && file_exists(public_path($user->image))) {
                 unlink(public_path($user->image));
             }
-            
+
             $image = $request->file('image');
             $imageName = 'user_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('uploads/users'), $imageName);
@@ -78,13 +98,13 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'email' => 'required|email|unique:users,email',
-            'user_type' => 'required|in:admin,staff,supplier,retailer,dealer,wholesaler,guest',
+            'user_type' => 'required|in:staff,supplier,retailer,dealer,wholesaler,guest',
             'image' => 'nullable|file|image|max:2048',
             'address' => 'nullable|string',
             'previous_due' => 'nullable|numeric',
             'previous_credit' => 'nullable|numeric',
             'current_balance' => 'nullable|numeric',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8',
         ]);
 
         if ($validator->fails()) {
@@ -96,7 +116,14 @@ class UserController extends Controller
         }
 
         $data = $request->only([
-            'name', 'phone', 'email', 'user_type', 'address', 'previous_due', 'previous_credit', 'current_balance'
+            'name',
+            'phone',
+            'email',
+            'user_type',
+            'address',
+            'previous_due',
+            'previous_credit',
+            'current_balance'
         ]);
         $data['password'] = Hash::make($request->password);
 
@@ -118,20 +145,27 @@ class UserController extends Controller
     }
 
     // Update an existing user
-    public function updateUser(Request $request)
+    public function updateUser(Request $request, $id=null)
     {
+        // Validate the request
+        if (!$id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User ID is required',
+            ], 400);
+        }
+
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'email' => 'required|email|unique:users,email,' . $request->user_id,
-            'user_type' => 'required|in:admin,staff,supplier,retailer,dealer,wholesaler,guest',
+            'email' => 'required|email|unique:users,email,' . $id,
+            'user_type' => 'required|in:staff,supplier,retailer,dealer,wholesaler,guest',
             'image' => 'nullable|file|image|max:2048',
             'address' => 'nullable|string',
             'previous_due' => 'nullable|numeric',
             'previous_credit' => 'nullable|numeric',
             'current_balance' => 'nullable|numeric',
-            'password' => 'nullable|string|min:8|confirmed',
+            'password' => 'nullable|string|min:8',
         ]);
 
         if ($validator->fails()) {
@@ -142,9 +176,23 @@ class UserController extends Controller
             ], 422);
         }
 
-        $user = User::findOrFail($request->user_id);
+        $user = User::findOrFail($id);
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found',
+            ], 404);
+        }
+        // Fill user data from request
         $user->fill($request->only([
-            'name', 'phone', 'email', 'user_type', 'address', 'previous_due', 'previous_credit', 'current_balance'
+            'name',
+            'phone',
+            'email',
+            'user_type',
+            'address',
+            'previous_due',
+            'previous_credit',
+            'current_balance'
         ]));
 
         // Handle image upload
@@ -153,7 +201,7 @@ class UserController extends Controller
             if ($user->image && file_exists(public_path($user->image))) {
                 unlink(public_path($user->image));
             }
-            
+
             $image = $request->file('image');
             $imageName = 'user_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('uploads/users'), $imageName);
@@ -177,12 +225,12 @@ class UserController extends Controller
     public function deleteUser($id)
     {
         $user = User::findOrFail($id);
-        
+
         // Delete user image if exists
         if ($user->image && file_exists(public_path($user->image))) {
             unlink(public_path($user->image));
         }
-        
+
         $user->delete();
 
         return response()->json([

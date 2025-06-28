@@ -19,9 +19,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // UserController group for admin, super-admin, and staff
     Route::middleware(['role:admin|super-admin|staff'])->controller(UserController::class)->prefix('user')->group(function () {
         Route::put('/profile-update', 'profileUpdate');
+        Route::get('/profile', 'profile');
         Route::get('/{id}', 'getUser');
         Route::post('/create', 'createUser');
-        Route::put('/update', 'updateUser');
+        Route::put('/update/{id}', 'updateUser');
         Route::delete('/{id}', 'deleteUser');
     });
 
