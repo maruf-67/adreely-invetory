@@ -30,46 +30,46 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('businesses')->group(function () {
         Route::get('/', [BusinessController::class, 'index']);
         Route::post('/', [BusinessController::class, 'store']);
-        Route::get('/{business}', [BusinessController::class, 'show']);
-        Route::put('/{business}', [BusinessController::class, 'update']);
-        Route::delete('/{business}', [BusinessController::class, 'destroy']);
+        Route::get('/{id}', [BusinessController::class, 'show']);
+        Route::put('/{id}', [BusinessController::class, 'update']);
+        Route::delete('/{id}', [BusinessController::class, 'destroy']);
     });
 
     // User management routes
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index']);
         Route::post('/', [UserController::class, 'store']);
-        Route::get('/{type}', [UserController::class, 'getByType']);
-        Route::get('/{user}', [UserController::class, 'show']);
-        Route::put('/{user}', [UserController::class, 'update']);
-        Route::delete('/{user}', [UserController::class, 'destroy']);
+        Route::get('/type/{type}', [UserController::class, 'getByType']);
+        Route::get('/{id}', [UserController::class, 'show']);
+        Route::put('/{id}', [UserController::class, 'update']);
+        Route::delete('/{id}', [UserController::class, 'destroy']);
     });
 
     // Categories management
     Route::prefix('categories')->group(function () {
         Route::get('/', [CategoryController::class, 'index']);
         Route::post('/', [CategoryController::class, 'store']);
-        Route::get('/{category}', [CategoryController::class, 'show']);
-        Route::put('/{category}', [CategoryController::class, 'update']);
-        Route::delete('/{category}', [CategoryController::class, 'destroy']);
+        Route::get('/{id}', [CategoryController::class, 'show']);
+        Route::put('/{id}', [CategoryController::class, 'update']);
+        Route::delete('/{id}', [CategoryController::class, 'destroy']);
     });
     
     // Brands management
     Route::prefix('brands')->group(function () {
         Route::get('/', [BrandController::class, 'index']);
         Route::post('/', [BrandController::class, 'store']);
-        Route::get('/{brand}', [BrandController::class, 'show']);
-        Route::put('/{brand}', [BrandController::class, 'update']);
-        Route::delete('/{brand}', [BrandController::class, 'destroy']);
+        Route::get('/{id}', [BrandController::class, 'show']);
+        Route::put('/{id}', [BrandController::class, 'update']);
+        Route::delete('/{id}', [BrandController::class, 'destroy']);
     });
     
     // Units management
     Route::prefix('units')->group(function () {
         Route::get('/', [UnitController::class, 'index']);
         Route::post('/', [UnitController::class, 'store']);
-        Route::get('/{unit}', [UnitController::class, 'show']);
-        Route::put('/{unit}', [UnitController::class, 'update']);
-        Route::delete('/{unit}', [UnitController::class, 'destroy']);
+        Route::get('/{id}', [UnitController::class, 'show']);
+        Route::put('/{id}', [UnitController::class, 'update']);
+        Route::delete('/{id}', [UnitController::class, 'destroy']);
     });
     
     // Products management
@@ -77,8 +77,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [ProductController::class, 'index']);
         Route::post('/', [ProductController::class, 'store']);
         Route::get('/low-stock', [ProductController::class, 'lowStock']);
-        Route::get('/{product}', [ProductController::class, 'show']);
-        Route::put('/{product}', [ProductController::class, 'update']);
-        Route::delete('/{product}', [ProductController::class, 'destroy']);
+        Route::get('/{id}', [ProductController::class, 'show']);
+        Route::put('/{id}', [ProductController::class, 'update']);
+        Route::delete('/{id}', [ProductController::class, 'destroy']);
     });
 });

@@ -77,9 +77,18 @@ class BusinessController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Business $business): JsonResponse
+    public function show($id): JsonResponse
     {
         $user = Auth::user();
+        
+        $business = Business::find($id);
+        
+        if (!$business) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Business not found'
+            ], 404);
+        }
         
         // Check if user has access to this business
         if ($user->user_type !== 'admin' && $user->business_id !== $business->id) {
@@ -98,9 +107,18 @@ class BusinessController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Business $business): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
         $user = Auth::user();
+        
+        $business = Business::find($id);
+        
+        if (!$business) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Business not found'
+            ], 404);
+        }
         
         // Only owner can update business
         if ($business->owner_id !== $user->id) {
@@ -142,9 +160,18 @@ class BusinessController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Business $business): JsonResponse
+    public function destroy($id): JsonResponse
     {
         $user = Auth::user();
+        
+        $business = Business::find($id);
+        
+        if (!$business) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Business not found'
+            ], 404);
+        }
         
         // Only owner can delete business
         if ($business->owner_id !== $user->id) {

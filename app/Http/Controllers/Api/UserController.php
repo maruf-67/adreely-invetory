@@ -141,9 +141,18 @@ class UserController extends Controller
     /**
      * Display the specified user.
      */
-    public function show(User $user): JsonResponse
+    public function show($id): JsonResponse
     {
         $currentUser = Auth::user();
+        
+        $user = User::find($id);
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
 
         // Check if user belongs to same business
         if ($user->business_id !== $currentUser->business_id) {
@@ -170,9 +179,18 @@ class UserController extends Controller
     /**
      * Update the specified user.
      */
-    public function update(Request $request, User $user): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
         $currentUser = Auth::user();
+        
+        $user = User::find($id);
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
 
         // Check if user belongs to same business
         if ($user->business_id !== $currentUser->business_id) {
@@ -260,9 +278,18 @@ class UserController extends Controller
     /**
      * Remove the specified user.
      */
-    public function destroy(User $user): JsonResponse
+    public function destroy($id): JsonResponse
     {
         $currentUser = Auth::user();
+        
+        $user = User::find($id);
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
 
         // Check if user belongs to same business
         if ($user->business_id !== $currentUser->business_id) {
