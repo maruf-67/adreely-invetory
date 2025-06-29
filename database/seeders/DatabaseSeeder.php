@@ -13,7 +13,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Call RolePermissionSeeder to ensure roles and permissions are seeded
-        $this->call(RolePermissionSeeder::class);
+        // Call seeders in order
+        $this->call([
+            BusinessSeeder::class,
+            UserSeeder::class,
+            // RolePermissionSeeder::class,
+        ]);
     }
 }

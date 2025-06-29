@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Category extends Model
+class Brand extends Model
 {
     use HasFactory;
 
@@ -17,7 +17,7 @@ class Category extends Model
     ];
 
     /**
-     * Get the business that owns the category.
+     * Get the business that owns the brand.
      */
     public function business(): BelongsTo
     {
@@ -25,7 +25,7 @@ class Category extends Model
     }
 
     /**
-     * Get all products for this category.
+     * Get all products for this brand.
      */
     public function products(): HasMany
     {

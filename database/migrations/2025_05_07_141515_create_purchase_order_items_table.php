@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('purchase_order_id')->constrained()->onDelete('cascade');
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->decimal('unit_price', 10, 2);
-            $table->unsignedInteger('quantity');
-            $table->unsignedInteger('delivered_qty')->default(0);
+            $table->integer('quantity_ordered');
+            $table->integer('quantity_received')->default(0);
+            $table->decimal('unit_price', 15, 2);
+            $table->decimal('total_price', 15, 2)->storedAs('quantity_ordered * unit_price');
             $table->timestamps();
         });
     }

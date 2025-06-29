@@ -6,30 +6,28 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class PurchaseOrderItem extends Model
+class SalesOrderItem extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'purchase_order_id',
+        'sales_order_id',
         'product_id',
-        'quantity_ordered',
-        'quantity_received',
+        'quantity',
         'unit_price',
     ];
 
     protected $casts = [
-        'quantity_ordered' => 'integer',
-        'quantity_received' => 'integer',
+        'quantity' => 'integer',
         'unit_price' => 'decimal:2',
     ];
 
     /**
-     * Get the purchase order that owns the item.
+     * Get the sales order that owns the item.
      */
-    public function purchaseOrder(): BelongsTo
+    public function salesOrder(): BelongsTo
     {
-        return $this->belongsTo(PurchaseOrder::class);
+        return $this->belongsTo(SalesOrder::class);
     }
 
     /**

@@ -13,18 +13,20 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('business_id')->nullable()->constrained('businesses')->onDelete('cascade');
             $table->string('name');
-            $table->string('phone')->nullable();
-            $table->string('email')->unique();
+            $table->string('email')->unique()->nullable();
+            $table->string('phone')->unique();
+            $table->string('password')->nullable();
             $table->string('image')->nullable();
-            $table->string('address')->nullable();
+            $table->text('address')->nullable();
+            $table->enum('user_type', ['admin', 'staff', 'supplier', 'retailer', 'dealer', 'wholesaler', 'guest'])->default('guest');
+            $table->enum('party_type', ['Regular', 'Priority'])->nullable();
             $table->decimal('previous_due', 15, 2)->nullable();
             $table->decimal('previous_credit', 15, 2)->nullable();
             $table->decimal('current_balance', 15, 2)->default(0.00);
-            $table->enum('user_type', ['admin', 'staff', 'supplier', 'retailer', 'dealer', 'wholesaler', 'guest'])->default('guest');
-            $table->enum('parties_type', ['Regular', 'Priority'])->nullable();
-            $table->string('password');
-            $table->timestamp('email_verified_at')->nullable(); // keep for future reference
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

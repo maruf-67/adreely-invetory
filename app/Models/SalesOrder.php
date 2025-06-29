@@ -7,17 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class PurchaseOrder extends Model
+class SalesOrder extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'business_id',
-        'supplier_id',
+        'customer_id',
+        'invoice_number',
         'order_date',
-        'expected_delivery_date',
         'status',
         'sub_total',
+        'vat_gst_percent',
         'discount',
         'total_amount',
         'paid_amount',
@@ -26,15 +27,15 @@ class PurchaseOrder extends Model
 
     protected $casts = [
         'order_date' => 'date',
-        'expected_delivery_date' => 'date',
         'sub_total' => 'decimal:2',
+        'vat_gst_percent' => 'decimal:2',
         'discount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
     ];
 
     /**
-     * Get the business that owns the purchase order.
+     * Get the business that owns the sales order.
      */
     public function business(): BelongsTo
     {
@@ -42,15 +43,15 @@ class PurchaseOrder extends Model
     }
 
     /**
-     * Get the supplier for this purchase order.
+     * Get the customer for this sales order.
      */
-    public function supplier(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'supplier_id');
+        return $this->belongsTo(User::class, 'customer_id');
     }
 
     /**
-     * Get the user who created this purchase order.
+     * Get the user who created this sales order.
      */
     public function creator(): BelongsTo
     {
@@ -58,10 +59,10 @@ class PurchaseOrder extends Model
     }
 
     /**
-     * Get all items for this purchase order.
+     * Get all items for this sales order.
      */
     public function items(): HasMany
     {
-        return $this->hasMany(PurchaseOrderItem::class);
+        return $this->hasMany(SalesOrderItem::class);
     }
 }

@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->integer('low_stock_threshold')->default(10)->after('quantity');
+        Schema::table('businesses', function (Blueprint $table) {
+            $table->foreign('owner_id')->references('id')->on('users')->onDelete('set null');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->dropColumn('low_stock_threshold');
+        Schema::table('businesses', function (Blueprint $table) {
+            $table->dropForeign(['owner_id']);
         });
     }
 };

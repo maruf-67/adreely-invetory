@@ -7,17 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Category extends Model
+class Unit extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'business_id',
         'name',
+        'short_name',
     ];
 
     /**
-     * Get the business that owns the category.
+     * Get the business that owns the unit.
      */
     public function business(): BelongsTo
     {
@@ -25,7 +26,7 @@ class Category extends Model
     }
 
     /**
-     * Get all products for this category.
+     * Get all products for this unit.
      */
     public function products(): HasMany
     {

@@ -13,10 +13,13 @@ return new class extends Migration
     {
         Schema::create('inventory_histories', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('business_id')->constrained()->onDelete('cascade');
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->enum('type', ['in', 'out']);
-            $table->unsignedInteger('quantity');
-            $table->text('note')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->enum('type', ['stock-in', 'stock-out', 'adjustment']);
+            $table->integer('quantity_change');
+            $table->string('reason')->nullable();
+            $table->morphs('reference'); // reference_id and reference_type
             $table->timestamps();
         });
     }
