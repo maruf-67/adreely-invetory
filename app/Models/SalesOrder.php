@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SalesOrder extends Model
 {
-    use HasFactory;
+    
 
     protected $fillable = [
         'business_id',

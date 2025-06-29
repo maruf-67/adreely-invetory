@@ -9,8 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Business extends Model
 {
-    use HasFactory;
-
+    
     protected $fillable = [
         'name',
         'address',

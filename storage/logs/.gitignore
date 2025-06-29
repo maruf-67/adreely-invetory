@@ -1,2 +1,21 @@
 *
 !.gitignore
+# Ignore all log files
+*.log
+# Ignore all storage logs
+storage/logs/*.log
+# Ignore all storage temp files
+storage/temp/*
+# Ignore all storage cache files
+storage/cache/*
+# Ignore all storage sessions
+storage/framework/sessions/*
+# Ignore all storage views
+storage/framework/views/*
+# Ignore all storage tests
+storage/framework/testing/*
+# Ignore all storage backups
+storage/backups/*
+
+# ignore all public uploads
+public/uploads/*

@@ -259,7 +259,7 @@ class ModelMakeCommand extends GeneratorCommand
 
             $factoryCode = <<<EOT
             /** @use HasFactory<$factoryNamespace> */
-                use HasFactory;
+                
             EOT;
 
             $replacements['{{ factory }}'] = $factoryCode;

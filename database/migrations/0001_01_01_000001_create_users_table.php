@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('business_id')->nullable()->constrained('businesses')->onDelete('cascade');
             $table->string('name');
             $table->string('email')->unique()->nullable();
-            $table->string('phone')->unique();
+            $table->string('phone')->unique()->nullable();
             $table->string('password')->nullable();
             $table->string('image')->nullable();
             $table->text('address')->nullable();

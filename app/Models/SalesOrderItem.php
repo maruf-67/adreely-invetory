@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SalesOrderItem extends Model
 {
-    use HasFactory;
+    
 
     protected $fillable = [
         'sales_order_id',

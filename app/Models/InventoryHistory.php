@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class InventoryHistory extends Model
 {
-    use HasFactory;
+    
 
     protected $fillable = [
         'business_id',
