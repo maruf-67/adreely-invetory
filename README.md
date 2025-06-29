@@ -1,23 +1,117 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Inventory Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A comprehensive multi-tenant inventory management system built with Laravel 11. This system allows multiple businesses to manage their inventory, users, suppliers, customers, and sales/purchase orders independently.
 
-## About Laravel
+## 🚀 Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Multi-tenant Architecture**: Each admin manages their own isolated business
+- **User Management**: Admin, Staff, Suppliers, Retailers, Dealers, Wholesalers, and Guests
+- **Role-based Access Control**: Different permissions for different user types
+- **Inventory Tracking**: Complete stock management with history
+- **Purchase Orders**: Manage orders from suppliers
+- **Sales Orders**: Handle customer orders and invoicing
+- **RESTful API**: Clean JSON API for all operations
+- **Authentication**: Secure token-based authentication
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 📚 Documentation
+
+Complete documentation is available in the `docs` folder:
+
+- **[docs/README.md](docs/README.md)** - Documentation index and quick start guide
+- **[docs/DATABASE_DESIGN.md](docs/DATABASE_DESIGN.md)** - Database schema and relationships
+- **[docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)** - Complete API reference
+
+## 🛠️ Technology Stack
+
+- **Backend**: Laravel 11
+- **Database**: MySQL/SQLite
+- **Authentication**: Laravel Sanctum
+- **API**: RESTful JSON API
+- **Permissions**: Spatie Laravel Permission
+
+## 🚀 Quick Start
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd inventory-management-system
+   ```
+
+2. **Install dependencies**
+   ```bash
+   composer install
+   ```
+
+3. **Environment setup**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+
+4. **Database setup**
+   ```bash
+   php artisan migrate
+   php artisan db:seed
+   ```
+
+5. **Start the server**
+   ```bash
+   php artisan serve
+   ```
+
+## 📖 API Usage
+
+The API is available at `http://localhost:8000/api/`
+
+### Authentication
+```bash
+# Register a new admin
+POST /api/auth/register
+
+# Login
+POST /api/auth/login
+
+# Get profile
+GET /api/auth/profile
+```
+
+### Business Management
+```bash
+# Create business
+POST /api/businesses
+
+# Get businesses
+GET /api/businesses
+```
+
+For complete API documentation, see [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
+
+## 🏗️ Project Structure
+
+```
+├── app/
+│   ├── Http/Controllers/Api/  # API Controllers
+│   ├── Models/               # Eloquent Models
+│   └── ...
+├── database/
+│   ├── migrations/          # Database migrations
+│   └── seeders/            # Database seeders
+├── docs/                   # Documentation
+├── routes/
+│   └── api.php            # API routes
+└── ...
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
