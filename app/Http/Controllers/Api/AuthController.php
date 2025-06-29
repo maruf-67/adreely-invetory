@@ -14,19 +14,15 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     /**
-     * Register a new admin user with business.
+     * Register a new admin user (business owner)
      */
     public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20|unique:users,phone',
-            'email' => 'required|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'business_name' => 'required|string|max:255',
-            'business_address' => 'nullable|string',
-            'business_phone' => 'nullable|string|max:20',
-            'business_email' => 'nullable|email|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+            'business_name' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -37,30 +33,27 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // Create business first
+        // Create business first if business_name is provided
         $business = Business::create([
-            'name' => $request->business_name,
-            'address' => $request->business_address,
-            'phone' => $request->business_phone,
-            'email' => $request->business_email,
+            'name' => $request->business_name ?? null,
             'is_active' => true,
         ]);
 
         // Create admin user
         $user = User::create([
-            'business_id' => $business->id,
             'name' => $request->name,
-            'phone' => $request->phone,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'user_type' => 'admin',
-            'current_balance' => 0,
+            'business_id' => $business ? $business->id : null,
         ]);
 
-        // Update business owner_id
-        $business->update(['owner_id' => $user->id]);
+        // Update business owner_id if business was created
+        if ($business) {
+            $business->update(['owner_id' => $user->id]);
+        }
 
-        // Create token
+        // Create access token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -68,20 +61,19 @@ class AuthController extends Controller
             'message' => 'Admin registered successfully',
             'data' => [
                 'user' => $user->load('business'),
-                'business' => $business,
-                'token' => $token,
+                'access_token' => $token,
                 'token_type' => 'Bearer'
             ]
         ], 201);
     }
 
     /**
-     * Login user.
+     * Login user (only admin and staff)
      */
     public function login(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'login' => 'required|string', // Can be email or phone
+            'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
@@ -93,39 +85,33 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $login = $request->login;
-        $password = $request->password;
+        // Find user by email
+        $user = User::where('email', $request->email)->first();
 
-        // Determine if login is email or phone
-        $field = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
 
-        // Find user
-        $user = User::where($field, $login)->first();
+        // Check if user is admin or staff
+        if (!in_array($user->user_type, ['admin', 'staff'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only admin and staff users can login'
+            ], 403);
+        }
 
-        if (!$user || !Hash::check($password, $user->password)) {
+        // Check password
+        if (!Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials'
             ], 401);
         }
 
-        // Check if user has login permissions (admin or staff)
-        if (!in_array($user->user_type, ['admin', 'staff'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User type not allowed to login'
-            ], 403);
-        }
-
-        // Check if business is active
-        if ($user->business && !$user->business->is_active) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Business account is inactive'
-            ], 403);
-        }
-
-        // Create token
+        // Create access token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -133,27 +119,40 @@ class AuthController extends Controller
             'message' => 'Login successful',
             'data' => [
                 'user' => $user->load('business'),
-                'token' => $token,
+                'access_token' => $token,
                 'token_type' => 'Bearer'
             ]
         ]);
     }
 
     /**
-     * Get authenticated user profile.
+     * Logout user
      */
-    public function profile(): JsonResponse
+    public function logout(Request $request): JsonResponse
     {
-        $user = Auth::user();
-        
+        $request->user()->currentAccessToken()->delete();
+
         return response()->json([
             'success' => true,
-            'data' => $user->load('business', 'creator')
+            'message' => 'Logged out successfully'
         ]);
     }
 
     /**
-     * Update user profile.
+     * Get user profile
+     */
+    public function profile(): JsonResponse
+    {
+        $user = User::with(['business', 'creator'])->find(Auth::id());
+
+        return response()->json([
+            'success' => true,
+            'data' => $user
+        ]);
+    }
+
+    /**
+     * Update user profile
      */
     public function updateProfile(Request $request): JsonResponse
     {
@@ -161,10 +160,11 @@ class AuthController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
-            'phone' => 'sometimes|required|string|max:20|unique:users,phone,' . $user->id,
-            'email' => 'sometimes|required|email|max:255|unique:users,email,' . $user->id,
-            'image' => 'nullable|string',
+            'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
+            'image' => 'nullable|file|image|max:2048',
+            'party_type' => 'nullable|in:Regular,Priority',
         ]);
 
         if ($validator->fails()) {
@@ -175,9 +175,31 @@ class AuthController extends Controller
             ], 422);
         }
 
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($user->image && file_exists(public_path($user->image))) {
+                unlink(public_path($user->image));
+            }
+
+            $image = $request->file('image');
+            $imageName = 'user_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('uploads/users'), $imageName);
+            $user->image = 'uploads/users/' . $imageName;
+        }
+
         $user->update($request->only([
-            'name', 'phone', 'email', 'image', 'address'
+            'name',
+            'email',
+            'phone',
+            'address',
+            'party_type'
         ]));
+
+        // Save the image path if it was uploaded
+        if ($request->hasFile('image')) {
+            $user->save();
+        }
 
         return response()->json([
             'success' => true,
@@ -187,7 +209,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Change user password.
+     * Change password
      */
     public function changePassword(Request $request): JsonResponse
     {
@@ -206,6 +228,7 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
+        // Check current password
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'success' => false,
@@ -213,6 +236,7 @@ class AuthController extends Controller
             ], 400);
         }
 
+        // Update password
         $user->update([
             'password' => Hash::make($request->new_password)
         ]);
@@ -224,24 +248,11 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout user.
+     * Logout from all devices
      */
-    public function logout(): JsonResponse
+    public function logoutAll(Request $request): JsonResponse
     {
-        Auth::user()->currentAccessToken()->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Logged out successfully'
-        ]);
-    }
-
-    /**
-     * Logout from all devices.
-     */
-    public function logoutAll(): JsonResponse
-    {
-        Auth::user()->tokens()->delete();
+        $request->user()->tokens()->delete();
 
         return response()->json([
             'success' => true,

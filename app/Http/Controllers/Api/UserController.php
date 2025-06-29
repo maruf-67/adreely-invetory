@@ -27,6 +27,14 @@ class UserController extends Controller
             ], 400);
         }
 
+        // Only admin and staff can view all users
+        if (!in_array($user->user_type, ['admin', 'staff'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to view users'
+            ], 403);
+        }
+
         $query = User::where('business_id', $businessId);
 
         // Filter by user type if requested
@@ -39,7 +47,8 @@ class UserController extends Controller
             $query->where('party_type', $request->party_type);
         }
 
-        $users = $query->with('creator')->get();
+
+        $users = $query->with('creator')->whereIn('user_type', ['supplier', 'retailer', 'dealer', 'wholesaler', 'guest'])->get();
 
         return response()->json([
             'success' => true,
@@ -66,13 +75,13 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20|unique:users,phone',
             'email' => 'nullable|email|max:255|unique:users,email',
-            'image' => 'nullable|string',
+            'image' => 'nullable|file|image|max:2048',
             'address' => 'nullable|string',
-            'user_type' => 'required|in:admin,staff,supplier,retailer,dealer,wholesaler,guest',
+            'user_type' => 'required|in:staff,supplier,retailer,dealer,wholesaler,guest',
             'party_type' => 'nullable|in:Regular,Priority',
-            'previous_due' => 'nullable|numeric',
-            'previous_credit' => 'nullable|numeric',
-            'password' => 'nullable|string|min:8|confirmed',
+            'previous_due' => 'nullable|numeric|min:0',
+            'previous_credit' => 'nullable|numeric|min:0',
+            'password' => 'nullable|string|min:8',
         ]);
 
         if ($validator->fails()) {
@@ -91,12 +100,21 @@ class UserController extends Controller
             ], 403);
         }
 
+        // Handle image upload
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $image->move(public_path('uploads/users'), $imageName);
+            $imagePath = 'uploads/users/' . $imageName;
+        }
+
         $userData = [
             'business_id' => $currentUser->business_id,
             'name' => $request->name,
             'phone' => $request->phone,
             'email' => $request->email,
-            'image' => $request->image,
+            'image' => $imagePath,
             'address' => $request->address,
             'user_type' => $request->user_type,
             'party_type' => $request->party_type,
@@ -106,8 +124,8 @@ class UserController extends Controller
             'created_by' => $currentUser->id,
         ];
 
-        // Only set password for admin and staff users
-        if (in_array($request->user_type, ['admin', 'staff']) && $request->password) {
+        // Only set password for staff users
+        if ($request->user_type === 'staff' && $request->password) {
             $userData['password'] = Hash::make($request->password);
         }
 
@@ -135,6 +153,14 @@ class UserController extends Controller
             ], 403);
         }
 
+        // Only admin and staff can view user details
+        if (!in_array($currentUser->user_type, ['admin', 'staff'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to view user details'
+            ], 403);
+        }
+
         return response()->json([
             'success' => true,
             'data' => $user->load('creator', 'business')
@@ -156,11 +182,19 @@ class UserController extends Controller
             ], 403);
         }
 
-        // Only admin can update admin users, and users can update themselves
-        if ($user->user_type === 'admin' && $currentUser->user_type !== 'admin') {
+        // Only admin and staff can update users
+        if (!in_array($currentUser->user_type, ['admin', 'staff'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only admin can update admin users'
+                'message' => 'Unauthorized to update users'
+            ], 403);
+        }
+
+        // Only admin can update admin and staff users
+        if (in_array($user->user_type, ['admin', 'staff']) && $currentUser->user_type !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only admin can update admin and staff users'
             ], 403);
         }
 
@@ -168,12 +202,12 @@ class UserController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'phone' => 'sometimes|required|string|max:20|unique:users,phone,' . $user->id,
             'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
-            'image' => 'nullable|string',
+            'image' => 'nullable|file|image|max:2048',
             'address' => 'nullable|string',
             'party_type' => 'nullable|in:Regular,Priority',
-            'previous_due' => 'nullable|numeric',
-            'previous_credit' => 'nullable|numeric',
-            'password' => 'nullable|string|min:8|confirmed',
+            'previous_due' => 'nullable|numeric|min:0',
+            'previous_credit' => 'nullable|numeric|min:0',
+            'password' => 'nullable|string|min:8',
         ]);
 
         if ($validator->fails()) {
@@ -185,8 +219,22 @@ class UserController extends Controller
         }
 
         $updateData = $request->only([
-            'name', 'phone', 'email', 'image', 'address', 'party_type', 'previous_due', 'previous_credit'
+            'name', 'phone', 'email', 'address', 'party_type', 'previous_due', 'previous_credit'
         ]);
+
+        // Handle image upload and delete previous image
+        if ($request->hasFile('image')) {
+            // Delete previous image if exists
+            if ($user->image && file_exists(public_path($user->image))) {
+                unlink(public_path($user->image));
+            }
+            
+            // Upload new image
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $image->move(public_path('uploads/users'), $imageName);
+            $updateData['image'] = 'uploads/users/' . $imageName;
+        }
 
         // Update current balance if previous amounts change
         if ($request->has('previous_due') || $request->has('previous_credit')) {
@@ -224,7 +272,7 @@ class UserController extends Controller
             ], 403);
         }
 
-        // Only admin can delete users, and cannot delete themselves
+        // Only admin can delete users
         if ($currentUser->user_type !== 'admin') {
             return response()->json([
                 'success' => false,
@@ -232,11 +280,17 @@ class UserController extends Controller
             ], 403);
         }
 
+        // Cannot delete yourself
         if ($user->id === $currentUser->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot delete yourself'
             ], 400);
+        }
+
+        // Delete user image if exists
+        if ($user->image && file_exists(public_path($user->image))) {
+            unlink(public_path($user->image));
         }
 
         $user->delete();
@@ -260,6 +314,14 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'User must belong to a business'
             ], 400);
+        }
+
+        // Only admin and staff can view users
+        if (!in_array($currentUser->user_type, ['admin', 'staff'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to view users'
+            ], 403);
         }
 
         $validTypes = ['supplier', 'retailer', 'dealer', 'wholesaler', 'guest', 'staff'];
