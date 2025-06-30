@@ -63,7 +63,7 @@ class ProductController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'sku' => 'nullable|string|max:100',
-            'image' => 'nullable|string',
+            'image' => 'nullable|file|image|max:2048',
             'category_id' => 'nullable|exists:categories,id',
             'brand_id' => 'nullable|exists:brands,id',
             'unit_id' => 'required|exists:units,id',
@@ -113,11 +113,20 @@ class ProductController extends Controller
             ], 400);
         }
 
+        // Handle image upload
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $image->move(public_path('uploads/products'), $imageName);
+            $imagePath = 'uploads/products/' . $imageName;
+        }
+
         $product = Product::create([
             'business_id' => $user->business_id,
             'name' => $request->name,
             'sku' => $request->sku,
-            'image' => $request->image,
+            'image' => $imagePath,
             'category_id' => $request->category_id,
             'brand_id' => $request->brand_id,
             'unit_id' => $request->unit_id,
@@ -181,7 +190,7 @@ class ProductController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
             'sku' => 'nullable|string|max:100',
-            'image' => 'nullable|string',
+            'image' => 'nullable|file|image|max:2048',
             'category_id' => 'nullable|exists:categories,id',
             'brand_id' => 'nullable|exists:brands,id',
             'unit_id' => 'sometimes|required|exists:units,id',
@@ -231,10 +240,26 @@ class ProductController extends Controller
             }
         }
 
-        $product->update($request->only([
-            'name', 'sku', 'image', 'category_id', 'brand_id', 'unit_id', 
+        $updateData = $request->only([
+            'name', 'sku', 'category_id', 'brand_id', 'unit_id', 
             'description', 'purchase_price', 'selling_price', 'quantity', 'low_stock_threshold'
-        ]));
+        ]);
+
+        // Handle image upload and delete previous image
+        if ($request->hasFile('image')) {
+            // Delete previous image if exists
+            if ($product->image && file_exists(public_path($product->image))) {
+                unlink(public_path($product->image));
+            }
+            
+            // Upload new image
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $image->move(public_path('uploads/products'), $imageName);
+            $updateData['image'] = 'uploads/products/' . $imageName;
+        }
+
+        $product->update($updateData);
 
         return response()->json([
             'success' => true,
@@ -267,6 +292,11 @@ class ProductController extends Controller
                 'success' => false,
                 'message' => 'Cannot delete product that has order history'
             ], 400);
+        }
+
+        // Delete product image if exists
+        if ($product->image && file_exists(public_path($product->image))) {
+            unlink(public_path($product->image));
         }
 
         $product->delete();
