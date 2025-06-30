@@ -24,7 +24,8 @@ return new class extends Migration
             $table->decimal('total_amount', 15, 2);
             $table->decimal('paid_amount', 15, 2)->default(0);
             $table->decimal('due_amount', 15, 2)->storedAs('total_amount - paid_amount');
-            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }

@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasUserTracking;
 use Illuminate\Database\Eloquent\Model;
 
 class ChequePayment extends Model
 {
-    
+    use HasUserTracking;
 
     protected $fillable = [
         'related_type',
@@ -15,7 +16,6 @@ class ChequePayment extends Model
         'amount',
         'bank_name',
         'cheque_number',
-        'updated_by',
     ];
 
     public function updatedBy()
