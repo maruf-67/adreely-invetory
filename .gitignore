@@ -1,0 +1,147 @@
+# Laravel Framework
+/vendor/
+/node_modules/
+/public/hot
+/public/storage
+/public/uploads/*
+/storage/*.key
+/storage/app/private/*
+/storage/app/public/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*.log
+/storage/debugbar/
+
+
+# Environment files
+.env
+.env.backup
+.env.production
+.env.local
+.env.*.local
+
+# Laravel Homestead
+Homestead.json
+Homestead.yaml
+.vagrant
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# NPM/Yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/dist/
+/build/
+
+# Composer
+composer.phar
+/vendor/
+composer.lock
+
+# Laravel Mix
+/public/mix-manifest.json
+/public/css/
+/public/js/
+
+# Hot reload files
+/public/hot
+
+# PHP
+*.log
+php_errors.log
+
+# Cache
+bootstrap/cache/*.php
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Local configuration
+.phpunit.result.cache
+.phpunit.cache
+
+# Database
+*.sqlite
+*.sqlite-journal
+/database/database.sqlite
+
+# Generated documentation
+/docs/_build/
+
+# Upload directories
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+
+# Application specific
+/storage/app/private/*
+!/storage/app/private/.gitkeep
+/storage/app/public/*
+!/storage/app/public/.gitkeep
+
+# Testing
+.coverage
+coverage/
+test-results/
+phpunit.xml.dist
+coverage.xml
+
+# Deployment
+deploy.php
+Envoy.blade.php
+
+# Package managers
+package-lock.json
+yarn.lock
+
+# Error logs
+error.log
+access.log
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+
+# Laravel Telescope
+/storage/telescope/
+
+# Laravel Horizon
+/storage/horizon/
+
+# Browser testing
+/tests/Browser/screenshots/
+/tests/Browser/console/
+
+# IDE helper files
+.phpstorm.meta.php
+_ide_helper.php
+_ide_helper_models.php
+
+# Sentry
+.sentryclirc
