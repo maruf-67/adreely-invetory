@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('business_id')->constrained('businesses')->onDelete('cascade');
             $table->string('name'); // e.g., 'pieces', 'kilogram', 'liter'
-            $table->string('short_name'); // e.g., 'pcs', 'kg', 'l'
+            $table->string('short_name')->nullable(); // e.g., 'pcs', 'kg', 'l'
             $table->boolean('is_active')->default(true);
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');

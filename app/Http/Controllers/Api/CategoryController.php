@@ -32,6 +32,8 @@ class CategoryController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean',
         ]);
 
         if ($validator->fails()) {
@@ -47,6 +49,8 @@ class CategoryController extends Controller
         $category = Category::create([
             'business_id' => $user->business_id,
             'name' => $request->name,
+            'description' => $request->description,
+            'is_active' => $request->is_active ?? true,
         ]);
 
         return response()->json([
@@ -59,15 +63,19 @@ class CategoryController extends Controller
     /**
      * Display the specified category.
      */
-    public function show(Category $category): JsonResponse
+    public function show($id): JsonResponse
     {
         $user = Auth::user();
+        
+        $category = Category::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
 
-        if ($category->business_id !== $user->business_id) {
+        if (!$category) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this category'
-            ], 403);
+                'message' => 'Category not found'
+            ], 404);
         }
 
         return response()->json([
@@ -79,19 +87,25 @@ class CategoryController extends Controller
     /**
      * Update the specified category.
      */
-    public function update(Request $request, Category $category): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
         $user = Auth::user();
 
-        if ($category->business_id !== $user->business_id) {
+        $category = Category::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
+
+        if (!$category) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this category'
-            ], 403);
+                'message' => 'Category not found'
+            ], 404);
         }
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean',
         ]);
 
         if ($validator->fails()) {
@@ -102,9 +116,7 @@ class CategoryController extends Controller
             ], 422);
         }
 
-        $category->update([
-            'name' => $request->name,
-        ]);
+        $category->update($request->only(['name', 'description', 'is_active']));
 
         return response()->json([
             'success' => true,
@@ -116,15 +128,19 @@ class CategoryController extends Controller
     /**
      * Remove the specified category.
      */
-    public function destroy(Category $category): JsonResponse
+    public function destroy($id): JsonResponse
     {
         $user = Auth::user();
 
-        if ($category->business_id !== $user->business_id) {
+        $category = Category::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
+
+        if (!$category) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this category'
-            ], 403);
+                'message' => 'Category not found'
+            ], 404);
         }
 
         // Check if category has products

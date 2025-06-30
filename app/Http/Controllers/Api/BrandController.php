@@ -32,6 +32,7 @@ class BrandController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'is_active' => 'boolean',
         ]);
 
         if ($validator->fails()) {
@@ -47,6 +48,7 @@ class BrandController extends Controller
         $brand = Brand::create([
             'business_id' => $user->business_id,
             'name' => $request->name,
+            'is_active' => $request->is_active ?? true,
         ]);
 
         return response()->json([
@@ -59,15 +61,19 @@ class BrandController extends Controller
     /**
      * Display the specified brand.
      */
-    public function show(Brand $brand): JsonResponse
+    public function show($id): JsonResponse
     {
         $user = Auth::user();
+        
+        $brand = Brand::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
 
-        if ($brand->business_id !== $user->business_id) {
+        if (!$brand) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this brand'
-            ], 403);
+                'message' => 'Brand not found'
+            ], 404);
         }
 
         return response()->json([
@@ -79,19 +85,24 @@ class BrandController extends Controller
     /**
      * Update the specified brand.
      */
-    public function update(Request $request, Brand $brand): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
         $user = Auth::user();
 
-        if ($brand->business_id !== $user->business_id) {
+        $brand = Brand::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
+
+        if (!$brand) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this brand'
-            ], 403);
+                'message' => 'Brand not found'
+            ], 404);
         }
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'is_active' => 'boolean',
         ]);
 
         if ($validator->fails()) {
@@ -102,9 +113,7 @@ class BrandController extends Controller
             ], 422);
         }
 
-        $brand->update([
-            'name' => $request->name,
-        ]);
+        $brand->update($request->only(['name', 'is_active']));
 
         return response()->json([
             'success' => true,
@@ -116,15 +125,19 @@ class BrandController extends Controller
     /**
      * Remove the specified brand.
      */
-    public function destroy(Brand $brand): JsonResponse
+    public function destroy($id): JsonResponse
     {
         $user = Auth::user();
 
-        if ($brand->business_id !== $user->business_id) {
+        $brand = Brand::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
+
+        if (!$brand) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this brand'
-            ], 403);
+                'message' => 'Brand not found'
+            ], 404);
         }
 
         // Check if brand has products

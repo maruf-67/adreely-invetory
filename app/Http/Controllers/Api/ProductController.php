@@ -138,35 +138,44 @@ class ProductController extends Controller
     /**
      * Display the specified product.
      */
-    public function show(Product $product): JsonResponse
+    public function show($id): JsonResponse
     {
         $user = Auth::user();
+        
+        $product = Product::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->with(['category', 'brand', 'unit'])
+            ->first();
 
-        if ($product->business_id !== $user->business_id) {
+        if (!$product) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this product'
-            ], 403);
+                'message' => 'Product not found'
+            ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $product->load(['category', 'brand', 'unit'])
+            'data' => $product
         ]);
     }
 
     /**
      * Update the specified product.
      */
-    public function update(Request $request, Product $product): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
         $user = Auth::user();
 
-        if ($product->business_id !== $user->business_id) {
+        $product = Product::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
+
+        if (!$product) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this product'
-            ], 403);
+                'message' => 'Product not found'
+            ], 404);
         }
 
         $validator = Validator::make($request->all(), [
@@ -237,15 +246,19 @@ class ProductController extends Controller
     /**
      * Remove the specified product.
      */
-    public function destroy(Product $product): JsonResponse
+    public function destroy($id): JsonResponse
     {
         $user = Auth::user();
 
-        if ($product->business_id !== $user->business_id) {
+        $product = Product::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
+
+        if (!$product) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this product'
-            ], 403);
+                'message' => 'Product not found'
+            ], 404);
         }
 
         // Check if product has order items
