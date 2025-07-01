@@ -12,7 +12,16 @@ use Illuminate\Support\Facades\Validator;
 class BrandController extends Controller
 {
     /**
-     * Display a listing of brands for the business.
+     * List all brands for the authenticated user's business.
+     *
+     * Features:
+     * - Retrieves all brands belonging to the user's business
+     * - Returns brand data in JSON format
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business brands
+     *
+     * @return \Illuminate\Http\JsonResponse List of brands
      */
     public function index(): JsonResponse
     {
@@ -26,7 +35,18 @@ class BrandController extends Controller
     }
 
     /**
-     * Store a newly created brand.
+     * Create a new brand for the authenticated user's business.
+     *
+     * Features:
+     * - Validates brand data
+     * - Creates a new brand record
+     *
+     * Security considerations:
+     * - Only authenticated users can create brands for their business
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing brand data
+     * @return \Illuminate\Http\JsonResponse Created brand or error message
      */
     public function store(Request $request): JsonResponse
     {
@@ -59,7 +79,16 @@ class BrandController extends Controller
     }
 
     /**
-     * Display the specified brand.
+     * Retrieve a specific brand by ID for the authenticated user's business.
+     *
+     * Features:
+     * - Loads a brand by ID if it belongs to the user's business
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business brands
+     *
+     * @param int $id The brand ID
+     * @return \Illuminate\Http\JsonResponse Brand data or error message
      */
     public function show($id): JsonResponse
     {
@@ -83,7 +112,18 @@ class BrandController extends Controller
     }
 
     /**
-     * Update the specified brand.
+     * Update a specific brand for the authenticated user's business.
+     *
+     * Features:
+     * - Validates and updates brand data
+     *
+     * Security considerations:
+     * - Only authenticated users can update their business brands
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing brand updates
+     * @param int $id The brand ID
+     * @return \Illuminate\Http\JsonResponse Updated brand or error message
      */
     public function update(Request $request, $id): JsonResponse
     {
@@ -123,7 +163,18 @@ class BrandController extends Controller
     }
 
     /**
-     * Remove the specified brand.
+     * Delete a specific brand from the authenticated user's business.
+     *
+     * Features:
+     * - Deletes a brand if it has no products
+     * - Returns confirmation message
+     *
+     * Security considerations:
+     * - Only authenticated users can delete their business brands
+     * - Prevents deletion if brand is in use by products
+     *
+     * @param int $id The brand ID
+     * @return \Illuminate\Http\JsonResponse Success or error message
      */
     public function destroy($id): JsonResponse
     {

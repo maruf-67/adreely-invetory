@@ -15,7 +15,17 @@ use Illuminate\Support\Facades\Validator;
 class ProductController extends Controller
 {
     /**
-     * Display a listing of products for the business.
+     * List all products for the authenticated user's business.
+     *
+     * Features:
+     * - Retrieves products with filters (category, brand, search, low stock)
+     * - Loads related category, brand, and unit
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business products
+     *
+     * @param Request $request The request containing filter parameters
+     * @return \Illuminate\Http\JsonResponse List of products
      */
     public function index(Request $request): JsonResponse
     {
@@ -56,7 +66,20 @@ class ProductController extends Controller
     }
 
     /**
-     * Store a newly created product.
+     * Create a new product for the authenticated user's business.
+     *
+     * Features:
+     * - Validates product data
+     * - Handles image upload
+     * - Validates relationships (category, brand, unit)
+     *
+     * Security considerations:
+     * - Only authenticated users can create products for their business
+     * - Input validation prevents malicious data injection
+     * - Ensures related entities belong to the business
+     *
+     * @param Request $request The request containing product data
+     * @return \Illuminate\Http\JsonResponse Created product or error message
      */
     public function store(Request $request): JsonResponse
     {
@@ -145,7 +168,16 @@ class ProductController extends Controller
     }
 
     /**
-     * Display the specified product.
+     * Retrieve a specific product by ID for the authenticated user's business.
+     *
+     * Features:
+     * - Loads a product by ID with related data
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business products
+     *
+     * @param int $id The product ID
+     * @return \Illuminate\Http\JsonResponse Product data or error message
      */
     public function show($id): JsonResponse
     {
@@ -170,7 +202,20 @@ class ProductController extends Controller
     }
 
     /**
-     * Update the specified product.
+     * Update a specific product for the authenticated user's business.
+     *
+     * Features:
+     * - Validates and updates product data
+     * - Handles image upload and relationship validation
+     *
+     * Security considerations:
+     * - Only authenticated users can update their business products
+     * - Input validation prevents malicious data injection
+     * - Ensures related entities belong to the business
+     *
+     * @param Request $request The request containing product updates
+     * @param int $id The product ID
+     * @return \Illuminate\Http\JsonResponse Updated product or error message
      */
     public function update(Request $request, $id): JsonResponse
     {
@@ -269,7 +314,18 @@ class ProductController extends Controller
     }
 
     /**
-     * Remove the specified product.
+     * Delete a specific product from the authenticated user's business.
+     *
+     * Features:
+     * - Deletes a product if not used in order history
+     * - Handles image deletion
+     *
+     * Security considerations:
+     * - Only authenticated users can delete their business products
+     * - Prevents deletion if product is in use by orders
+     *
+     * @param int $id The product ID
+     * @return \Illuminate\Http\JsonResponse Success or error message
      */
     public function destroy($id): JsonResponse
     {
@@ -308,7 +364,16 @@ class ProductController extends Controller
     }
 
     /**
-     * Get low stock products.
+     * List low stock products for the authenticated user's business.
+     *
+     * Features:
+     * - Retrieves products with quantity below or equal to low stock threshold
+     * - Loads related category, brand, and unit
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business products
+     *
+     * @return \Illuminate\Http\JsonResponse List of low stock products
      */
     public function lowStock(): JsonResponse
     {

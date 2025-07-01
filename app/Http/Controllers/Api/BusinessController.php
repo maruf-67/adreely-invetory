@@ -13,7 +13,16 @@ use Illuminate\Support\Facades\Validator;
 class BusinessController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * List all businesses accessible to the authenticated user.
+     *
+     * Features:
+     * - Admins see all owned businesses
+     * - Other users see their associated business
+     *
+     * Security considerations:
+     * - Only authenticated users can access their businesses
+     *
+     * @return \Illuminate\Http\JsonResponse List of businesses
      */
     public function index(): JsonResponse
     {
@@ -32,7 +41,19 @@ class BusinessController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Create a new business and assign the authenticated user as owner.
+     *
+     * Features:
+     * - Validates business data
+     * - Creates a new business and sets the user as owner
+     * - Updates user's business_id
+     *
+     * Security considerations:
+     * - Only authenticated users can create businesses
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing business data
+     * @return \Illuminate\Http\JsonResponse Created business or error message
      */
     public function store(Request $request): JsonResponse
     {
@@ -75,7 +96,16 @@ class BusinessController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Retrieve a specific business by ID if accessible to the user.
+     *
+     * Features:
+     * - Loads a business by ID if user has access
+     *
+     * Security considerations:
+     * - Only owner or associated users can access business details
+     *
+     * @param int $id The business ID
+     * @return \Illuminate\Http\JsonResponse Business data or error message
      */
     public function show($id): JsonResponse
     {
@@ -105,7 +135,18 @@ class BusinessController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update a specific business if the authenticated user is the owner.
+     *
+     * Features:
+     * - Validates and updates business data
+     *
+     * Security considerations:
+     * - Only the business owner can update business details
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing business updates
+     * @param int $id The business ID
+     * @return \Illuminate\Http\JsonResponse Updated business or error message
      */
     public function update(Request $request, $id): JsonResponse
     {
@@ -158,7 +199,17 @@ class BusinessController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete a specific business if the authenticated user is the owner.
+     *
+     * Features:
+     * - Deletes a business if the user is the owner
+     * - Returns confirmation message
+     *
+     * Security considerations:
+     * - Only the business owner can delete the business
+     *
+     * @param int $id The business ID
+     * @return \Illuminate\Http\JsonResponse Success or error message
      */
     public function destroy($id): JsonResponse
     {

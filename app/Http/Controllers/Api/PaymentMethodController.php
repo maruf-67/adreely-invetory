@@ -12,7 +12,17 @@ use Illuminate\Support\Facades\Validator;
 class PaymentMethodController extends Controller
 {
     /**
-     * Display a listing of payment methods.
+     * List all payment methods for the authenticated user's business.
+     *
+     * Features:
+     * - Retrieves payment methods with optional filters (active, type)
+     * - Returns payment method data in JSON format
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business payment methods
+     *
+     * @param Request $request The request containing filter parameters
+     * @return \Illuminate\Http\JsonResponse List of payment methods
      */
     public function index(Request $request): JsonResponse
     {
@@ -38,7 +48,18 @@ class PaymentMethodController extends Controller
     }
 
     /**
-     * Store a newly created payment method.
+     * Create a new payment method for the authenticated user's business.
+     *
+     * Features:
+     * - Validates payment method data
+     * - Creates a new payment method record
+     *
+     * Security considerations:
+     * - Only authenticated users can create payment methods for their business
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing payment method data
+     * @return \Illuminate\Http\JsonResponse Created payment method or error message
      */
     public function store(Request $request): JsonResponse
     {
@@ -84,7 +105,16 @@ class PaymentMethodController extends Controller
     }
 
     /**
-     * Display the specified payment method.
+     * Retrieve a specific payment method by ID for the authenticated user's business.
+     *
+     * Features:
+     * - Loads a payment method by ID if it belongs to the user's business
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business payment methods
+     *
+     * @param int $id The payment method ID
+     * @return \Illuminate\Http\JsonResponse Payment method data or error message
      */
     public function show($id): JsonResponse
     {
@@ -105,7 +135,18 @@ class PaymentMethodController extends Controller
     }
 
     /**
-     * Update the specified payment method.
+     * Update a specific payment method for the authenticated user's business.
+     *
+     * Features:
+     * - Validates and updates payment method data
+     *
+     * Security considerations:
+     * - Only authenticated users can update their business payment methods
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing payment method updates
+     * @param int $id The payment method ID
+     * @return \Illuminate\Http\JsonResponse Updated payment method or error message
      */
     public function update(Request $request, $id): JsonResponse
     {
@@ -158,7 +199,18 @@ class PaymentMethodController extends Controller
     }
 
     /**
-     * Remove the specified payment method.
+     * Delete a specific payment method from the authenticated user's business.
+     *
+     * Features:
+     * - Deletes a payment method if not used in transactions
+     * - Returns confirmation message
+     *
+     * Security considerations:
+     * - Only authenticated users can delete their business payment methods
+     * - Prevents deletion if payment method is in use
+     *
+     * @param int $id The payment method ID
+     * @return \Illuminate\Http\JsonResponse Success or error message
      */
     public function destroy($id): JsonResponse
     {

@@ -20,7 +20,18 @@ use Illuminate\Support\Facades\Validator;
 class PurchaseOrderController extends Controller
 {
     /**
-     * Display a listing of purchase orders.
+     * List all purchase orders for the authenticated user's business.
+     *
+     * Features:
+     * - Retrieves purchase orders with filters (status, date range, supplier)
+     * - Supports pagination
+     * - Loads related supplier, items, and shipments
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business purchase orders
+     *
+     * @param Request $request The request containing filter parameters
+     * @return \Illuminate\Http\JsonResponse List of purchase orders
      */
     public function index(Request $request): JsonResponse
     {
@@ -53,7 +64,20 @@ class PurchaseOrderController extends Controller
     }
 
     /**
-     * Store a newly created purchase order.
+     * Create a new purchase order for the authenticated user's business.
+     *
+     * Features:
+     * - Validates purchase order and item data
+     * - Verifies supplier and calculates totals
+     * - Creates purchase order and items in a transaction
+     *
+     * Security considerations:
+     * - Only authenticated users can create purchase orders for their business
+     * - Input validation prevents malicious data injection
+     * - Ensures supplier belongs to the business and has correct role
+     *
+     * @param Request $request The request containing purchase order data
+     * @return \Illuminate\Http\JsonResponse Created purchase order or error message
      */
     public function store(Request $request): JsonResponse
     {
@@ -154,7 +178,16 @@ class PurchaseOrderController extends Controller
     }
 
     /**
-     * Display the specified purchase order.
+     * Retrieve a specific purchase order by ID for the authenticated user's business.
+     *
+     * Features:
+     * - Loads a purchase order by ID with related data
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business purchase orders
+     *
+     * @param int $id The purchase order ID
+     * @return \Illuminate\Http\JsonResponse Purchase order data or error message
      */
     public function show($id): JsonResponse
     {

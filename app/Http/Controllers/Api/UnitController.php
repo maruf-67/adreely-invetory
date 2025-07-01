@@ -12,7 +12,16 @@ use Illuminate\Support\Facades\Validator;
 class UnitController extends Controller
 {
     /**
-     * Display a listing of units for the business.
+     * List all units for the authenticated user's business.
+     *
+     * Features:
+     * - Retrieves all units belonging to the user's business
+     * - Returns unit data in JSON format
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business units
+     *
+     * @return \Illuminate\Http\JsonResponse List of units
      */
     public function index(): JsonResponse
     {
@@ -26,7 +35,18 @@ class UnitController extends Controller
     }
 
     /**
-     * Store a newly created unit.
+     * Create a new unit for the authenticated user's business.
+     *
+     * Features:
+     * - Validates unit data
+     * - Creates a new unit record
+     *
+     * Security considerations:
+     * - Only authenticated users can create units for their business
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing unit data
+     * @return \Illuminate\Http\JsonResponse Created unit or error message
      */
     public function store(Request $request): JsonResponse
     {
@@ -61,7 +81,16 @@ class UnitController extends Controller
     }
 
     /**
-     * Display the specified unit.
+     * Retrieve a specific unit by ID for the authenticated user's business.
+     *
+     * Features:
+     * - Loads a unit by ID if it belongs to the user's business
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business units
+     *
+     * @param int $id The unit ID
+     * @return \Illuminate\Http\JsonResponse Unit data or error message
      */
     public function show($id): JsonResponse
     {
@@ -85,7 +114,18 @@ class UnitController extends Controller
     }
 
     /**
-     * Update the specified unit.
+     * Update a specific unit for the authenticated user's business.
+     *
+     * Features:
+     * - Validates and updates unit data
+     *
+     * Security considerations:
+     * - Only authenticated users can update their business units
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing unit updates
+     * @param int $id The unit ID
+     * @return \Illuminate\Http\JsonResponse Updated unit or error message
      */
     public function update(Request $request, $id): JsonResponse
     {
@@ -126,7 +166,18 @@ class UnitController extends Controller
     }
 
     /**
-     * Remove the specified unit.
+     * Delete a specific unit from the authenticated user's business.
+     *
+     * Features:
+     * - Deletes a unit if it has no products
+     * - Returns confirmation message
+     *
+     * Security considerations:
+     * - Only authenticated users can delete their business units
+     * - Prevents deletion if unit is in use by products
+     *
+     * @param int $id The unit ID
+     * @return \Illuminate\Http\JsonResponse Success or error message
      */
     public function destroy($id): JsonResponse
     {
