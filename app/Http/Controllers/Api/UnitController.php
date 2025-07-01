@@ -33,6 +33,7 @@ class UnitController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'short_name' => 'nullable|string|max:10',
+            'is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -49,6 +50,7 @@ class UnitController extends Controller
             'business_id' => $user->business_id,
             'name' => $request->name,
             'short_name' => $request->short_name,
+            'is_active' => $request->is_active ?? true,
         ]);
 
         return response()->json([
@@ -61,15 +63,19 @@ class UnitController extends Controller
     /**
      * Display the specified unit.
      */
-    public function show(Unit $unit): JsonResponse
+    public function show($id): JsonResponse
     {
         $user = Auth::user();
+        
+        $unit = Unit::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
 
-        if ($unit->business_id !== $user->business_id) {
+        if (!$unit) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this unit'
-            ], 403);
+                'message' => 'Unit not found'
+            ], 404);
         }
 
         return response()->json([
@@ -81,20 +87,25 @@ class UnitController extends Controller
     /**
      * Update the specified unit.
      */
-    public function update(Request $request, Unit $unit): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
         $user = Auth::user();
 
-        if ($unit->business_id !== $user->business_id) {
+        $unit = Unit::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
+
+        if (!$unit) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this unit'
-            ], 403);
+                'message' => 'Unit not found'
+            ], 404);
         }
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'short_name' => 'nullable|string|max:10',
+            'is_active' => 'boolean',
         ]);
 
         if ($validator->fails()) {
@@ -105,10 +116,7 @@ class UnitController extends Controller
             ], 422);
         }
 
-        $unit->update([
-            'name' => $request->name,
-            'short_name' => $request->short_name,
-        ]);
+        $unit->update($request->only(['name', 'short_name', 'is_active']));
 
         return response()->json([
             'success' => true,
@@ -120,15 +128,19 @@ class UnitController extends Controller
     /**
      * Remove the specified unit.
      */
-    public function destroy(Unit $unit): JsonResponse
+    public function destroy($id): JsonResponse
     {
         $user = Auth::user();
 
-        if ($unit->business_id !== $unit->business_id) {
+        $unit = Unit::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
+
+        if (!$unit) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access to this unit'
-            ], 403);
+                'message' => 'Unit not found'
+            ], 404);
         }
 
         // Check if unit has products

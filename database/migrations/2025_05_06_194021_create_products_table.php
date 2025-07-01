@@ -25,6 +25,8 @@ return new class extends Migration
             $table->decimal('selling_price', 15, 2);
             $table->integer('quantity')->default(0);
             $table->integer('low_stock_threshold')->default(5);
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
             
             $table->unique(['business_id', 'sku']);

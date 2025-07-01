@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasUserTracking;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseOrder extends Model
 {
-    
+    use HasUserTracking;
 
     protected $fillable = [
         'business_id',
@@ -21,7 +22,6 @@ class PurchaseOrder extends Model
         'discount',
         'total_amount',
         'paid_amount',
-        'created_by',
     ];
 
     protected $casts = [

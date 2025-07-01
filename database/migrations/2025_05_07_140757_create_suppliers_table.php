@@ -18,6 +18,8 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->decimal('balance_credit', 10, 2)->default(0);
             $table->decimal('balance_due', 10, 2)->default(0);
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }

@@ -18,10 +18,12 @@ return new class extends Migration
             $table->string('paymentable_type'); // The model of the order
             $table->foreignId('payment_method_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 15, 2);
-            $table->date('transaction_date');
-            $table->text('details')->nullable(); // e.g., Cheque number, transaction ID
             $table->enum('status', ['pending', 'clear', 'hold', 'rejected'])->nullable(); // For Cheques
-            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
+            $table->string('method');
+            $table->date('payment_date');
+            $table->text('notes')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }

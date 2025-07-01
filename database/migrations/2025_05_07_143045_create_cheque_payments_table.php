@@ -19,7 +19,8 @@ return new class extends Migration
             $table->decimal('amount', 10, 2);
             $table->string('bank_name')->nullable();
             $table->string('cheque_number')->nullable();
-            $table->foreignId('updated_by')->constrained('users')->onDelete('cascade');
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }

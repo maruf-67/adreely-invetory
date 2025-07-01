@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasUserTracking;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,10 +10,11 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Payment extends Model
 {
-    use HasFactory;
+    use HasUserTracking;
 
     protected $fillable = [
         'business_id',
+        'purchase_order_id',
         'paymentable_id',
         'paymentable_type',
         'payment_method_id',
@@ -20,7 +22,6 @@ class Payment extends Model
         'transaction_date',
         'details',
         'status',
-        'created_by',
     ];
 
     protected $casts = [

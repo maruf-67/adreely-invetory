@@ -20,6 +20,8 @@ return new class extends Migration
             $table->integer('quantity_change');
             $table->string('reason')->nullable();
             $table->morphs('reference'); // reference_id and reference_type
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }
