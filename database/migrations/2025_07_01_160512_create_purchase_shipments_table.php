@@ -11,16 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payments', function (Blueprint $table) {
+        Schema::create('purchase_shipments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('purchase_order_id')->constrained();
-            $table->decimal('amount', 15, 2);
-            $table->string('method');
-            $table->date('payment_date');
+            $table->foreignId('business_id')->constrained()->onDelete('cascade');
+            $table->foreignId('purchase_order_id')->constrained()->onDelete('cascade');
+            $table->string('shipment_number')->nullable();
+            $table->date('received_date');
+            $table->decimal('total_amount', 15, 2)->default(0);
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
+
+            // Add indexes for better performance
+            $table->index(['business_id', 'purchase_order_id']);
+            $table->index(['business_id', 'received_date']);
         });
     }
 
@@ -29,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('payments');
+        Schema::dropIfExists('purchase_shipments');
     }
 };

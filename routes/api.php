@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\UnitController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\PurchaseOrderController;
+use App\Http\Controllers\Api\PaymentMethodController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -80,5 +82,31 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [ProductController::class, 'show']);
         Route::put('/{id}', [ProductController::class, 'update']);
         Route::delete('/{id}', [ProductController::class, 'destroy']);
+    });
+
+    // Payment Methods management
+    Route::prefix('payment-methods')->group(function () {
+        Route::get('/', [PaymentMethodController::class, 'index']);
+        Route::post('/', [PaymentMethodController::class, 'store']);
+        Route::get('/{id}', [PaymentMethodController::class, 'show']);
+        Route::put('/{id}', [PaymentMethodController::class, 'update']);
+        Route::delete('/{id}', [PaymentMethodController::class, 'destroy']);
+    });
+
+    // Purchase Order management
+    Route::prefix('purchase-orders')->group(function () {
+        Route::get('/', [PurchaseOrderController::class, 'index']);
+        Route::post('/', [PurchaseOrderController::class, 'store']);
+        Route::get('/{id}', [PurchaseOrderController::class, 'show']);
+        Route::put('/{id}', [PurchaseOrderController::class, 'update']);
+        
+        // Shipment management
+        Route::post('/{id}/shipments', [PurchaseOrderController::class, 'receiveShipment']);
+        Route::get('/{id}/shipments', [PurchaseOrderController::class, 'getShipments']);
+        
+        // Payment management
+        Route::post('/{id}/payments', [PurchaseOrderController::class, 'addPayment']);
+        
+        Route::put('/{id}/cancel', [PurchaseOrderController::class, 'cancel']);
     });
 });
