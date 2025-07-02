@@ -555,4 +555,210 @@ class PurchaseOrderController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Update purchase order items for the specified purchase order.
+     *
+     * Features:
+     * - Updates existing items (quantity, unit price, notes)
+     * - Adds new items to the purchase order
+     * - Removes items not included in the request
+     * - Recalculates purchase order totals automatically
+     * - Supports bulk operations within a transaction
+     * - Validates all item data before making changes
+     *
+     * Business Rules:
+     * - Only allows updates to orders with 'pending' or 'partial' status
+     * - Cannot modify items that have been partially or fully received
+     * - Prevents deletion of items with received quantities
+     * - Automatically recalculates order totals based on item changes
+     * - Maintains audit trail with user tracking
+     *
+     * Security considerations:
+     * - Only authenticated users can update their business purchase orders
+     * - Validates product existence and business ownership
+     * - Prevents unauthorized access to other business data
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing items data
+     * @param int $id The purchase order ID
+     * @return \Illuminate\Http\JsonResponse Updated purchase order with items or error message
+     *
+     * Request format:
+     * {
+     *   "items": [
+     *     {
+     *       "id": 1,                    // Optional: existing item ID for updates
+     *       "product_id": 5,            // Required: product ID
+     *       "quantity_ordered": 10,     // Required: quantity to order
+     *       "unit_price": 25.50,        // Required: price per unit
+     *       "notes": "Special instructions" // Optional: item notes
+     *     }
+     *   ],
+     *   "discount": 50.00             // Optional: order discount
+     * }
+     */
+    public function updateItems(Request $request, $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'nullable|exists:purchase_order_items,id',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity_ordered' => 'required|integer|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.notes' => 'nullable|string|max:1000',
+            'discount' => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            return DB::transaction(function () use ($request, $id) {
+                $user = Auth::user();
+                $purchaseOrder = PurchaseOrder::where('business_id', $user->business_id)
+                    ->with(['items', 'supplier'])
+                    ->find($id);
+
+                if (!$purchaseOrder) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Purchase order not found'
+                    ], 404);
+                }
+
+                // Check if purchase order can be modified
+                if (!in_array($purchaseOrder->status, ['pending', 'partial'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot update items for purchase order with status: ' . $purchaseOrder->status
+                    ], 400);
+                }
+
+                // Verify all products belong to the business
+                $productIds = collect($request->items)->pluck('product_id');
+                $validProducts = Product::where('business_id', $user->business_id)
+                    ->whereIn('id', $productIds)
+                    ->pluck('id');
+
+                if ($productIds->diff($validProducts)->count() > 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'One or more products do not belong to your business'
+                    ], 400);
+                }
+
+                // Get existing items IDs that will be updated
+                $updatingItemIds = collect($request->items)
+                    ->pluck('id')
+                    ->filter()
+                    ->toArray();
+
+                // Check if any existing items have received quantities
+                $itemsWithReceived = $purchaseOrder->items()
+                    ->whereIn('id', $updatingItemIds)
+                    ->where('quantity_received', '>', 0)
+                    ->count();
+
+                if ($itemsWithReceived > 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot update items that have already been partially or fully received'
+                    ], 400);
+                }
+
+                // Identify items to delete (existing items not in the request)
+                $itemsToDelete = $purchaseOrder->items()
+                    ->whereNotIn('id', $updatingItemIds)
+                    ->where('quantity_received', 0) // Only delete items with no received quantity
+                    ->get();
+
+                // Check if any items to delete have received quantities
+                $itemsToDeleteWithReceived = $purchaseOrder->items()
+                    ->whereNotIn('id', $updatingItemIds)
+                    ->where('quantity_received', '>', 0)
+                    ->count();
+
+                if ($itemsToDeleteWithReceived > 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot remove items that have already been partially or fully received'
+                    ], 400);
+                }
+
+                // Delete items that are no longer needed
+                foreach ($itemsToDelete as $item) {
+                    $item->delete();
+                }
+
+                $subTotal = 0;
+
+                // Process each item (update existing or create new)
+                foreach ($request->items as $itemData) {
+                    $totalPrice = $itemData['quantity_ordered'] * $itemData['unit_price'];
+                    $subTotal += $totalPrice;
+
+                    if (isset($itemData['id']) && $itemData['id']) {
+                        // Update existing item
+                        $existingItem = PurchaseOrderItem::where('id', $itemData['id'])
+                            ->where('purchase_order_id', $purchaseOrder->id)
+                            ->first();
+
+                        if ($existingItem) {
+                            $existingItem->update([
+                                'product_id' => $itemData['product_id'],
+                                'quantity_ordered' => $itemData['quantity_ordered'],
+                                'unit_price' => $itemData['unit_price'],
+                                'total_price' => $totalPrice,
+                                'notes' => $itemData['notes'] ?? null,
+                                'updated_by' => $user->id,
+                            ]);
+                        }
+                    } else {
+                        // Create new item
+                        PurchaseOrderItem::create([
+                            'purchase_order_id' => $purchaseOrder->id,
+                            'product_id' => $itemData['product_id'],
+                            'quantity_ordered' => $itemData['quantity_ordered'],
+                            'unit_price' => $itemData['unit_price'],
+                            'total_price' => $totalPrice,
+                            'notes' => $itemData['notes'] ?? null,
+                            'created_by' => $user->id,
+                        ]);
+                    }
+                }
+
+                // Update purchase order totals
+                $discount = $request->get('discount', $purchaseOrder->discount);
+                $totalAmount = $subTotal - $discount;
+
+                $purchaseOrder->update([
+                    'sub_total' => $subTotal,
+                    'discount' => $discount,
+                    'total_amount' => $totalAmount,
+                    'updated_by' => $user->id,
+                ]);
+
+                // Reload purchase order with fresh data
+                $purchaseOrder = $purchaseOrder->fresh(['supplier', 'items.product']);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Purchase order items updated successfully',
+                    'data' => $purchaseOrder
+                ]);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update purchase order items',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -99,6 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [PurchaseOrderController::class, 'store']);
         Route::get('/{id}', [PurchaseOrderController::class, 'show']);
         Route::put('/{id}', [PurchaseOrderController::class, 'update']);
+        Route::put('/{id}/items', [PurchaseOrderController::class, 'updateItems']);
         
         // Shipment management
         Route::post('/{id}/shipments', [PurchaseOrderController::class, 'receiveShipment']);
