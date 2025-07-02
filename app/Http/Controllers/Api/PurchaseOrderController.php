@@ -569,10 +569,11 @@ class PurchaseOrderController extends Controller
      *
      * Business Rules:
      * - Only allows updates to orders with 'pending' or 'partial' status
-     * - Cannot modify items that have been partially or fully received
+     * - Can modify items with received quantities, but cannot reduce quantity below received amount
      * - Prevents deletion of items with received quantities
      * - Automatically recalculates order totals based on item changes
      * - Maintains audit trail with user tracking
+     * - Allows adding new items even to partially received orders
      *
      * Security considerations:
      * - Only authenticated users can update their business purchase orders
@@ -659,17 +660,22 @@ class PurchaseOrderController extends Controller
                     ->filter()
                     ->toArray();
 
-                // Check if any existing items have received quantities
-                $itemsWithReceived = $purchaseOrder->items()
-                    ->whereIn('id', $updatingItemIds)
-                    ->where('quantity_received', '>', 0)
-                    ->count();
-
-                if ($itemsWithReceived > 0) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Cannot update items that have already been partially or fully received'
-                    ], 400);
+                // Check if any existing items are being updated to a quantity less than already received
+                foreach ($request->items as $itemData) {
+                    if (isset($itemData['id']) && $itemData['id']) {
+                        $existingItem = $purchaseOrder->items()
+                            ->where('id', $itemData['id'])
+                            ->first();
+                        
+                        if ($existingItem && $existingItem->quantity_received > 0) {
+                            if ($itemData['quantity_ordered'] < $existingItem->quantity_received) {
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => "Cannot reduce quantity for item {$existingItem->product->name} below already received quantity ({$existingItem->quantity_received})"
+                                ], 400);
+                            }
+                        }
+                    }
                 }
 
                 // Identify items to delete (existing items not in the request)
