@@ -278,7 +278,7 @@ class PurchaseOrderController extends Controller
             'items.*.notes' => 'nullable|string',
             'notes' => 'nullable|string',
             'payment_amount' => 'nullable|numeric|min:0',
-            'payment_method_id' => 'required_with:payment_amount|exists:payment_methods,id',
+            'payment_method_id' => 'nullable|exists:payment_methods,id',
             'payment_notes' => 'nullable|string',
         ]);
 
