@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "1e5effde-c438-4967-b13d-6c2e1c8e942e",
+		"_postman_id": "88af57cc-1cfb-495c-a768-40a0a664e7fe",
 		"name": "Inventory Management API",
 		"description": "Complete API for Inventory Management System with multi-tenant architecture",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -193,7 +193,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"admin@business.com\",\n    \"password\": \"password123\"\n}",
+							"raw": "{\n    \"email\": \"admin1@example.com\",\n    \"password\": \"password123\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -350,11 +350,6 @@
 								"key": "Accept",
 								"value": "application/json",
 								"type": "text"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
-								"type": "text"
 							}
 						],
 						"url": {
@@ -473,7 +468,7 @@
 								},
 								{
 									"key": "email",
-									"value": "updated.admin@business.com",
+									"value": "admin@business.com",
 									"description": "Email address (must be unique)",
 									"type": "text"
 								},
@@ -1794,7 +1789,18 @@
 					"name": "Get All Categories",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
 						"url": {
 							"raw": "{{base_url}}/api/categories",
 							"host": [
@@ -1807,36 +1813,7 @@
 						},
 						"description": "Get all categories for the business."
 					},
-					"response": [
-						{
-							"name": "Successful Get All",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/api/categories",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"api",
-										"categories"
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"name\": \"Electronics\",\n            \"business_id\": 1,\n            \"created_by\": 1,\n            \"creator\": {\n                \"id\": 1,\n                \"name\": \"Admin User\"\n            }\n        }\n    ]\n}"
-						}
-					]
+					"response": []
 				},
 				{
 					"name": "Create Category",
@@ -1850,13 +1827,21 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Electronics\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Cosmetics",
+									"description": "Required",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Basic Consmetics",
+									"description": "Optional",
+									"type": "text"
 								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/api/categories",
@@ -1914,16 +1899,27 @@
 					"name": "Get Category by ID",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
 						"url": {
-							"raw": "{{base_url}}/api/categories/1",
+							"raw": "{{base_url}}/api/categories/32",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"categories",
-								"1"
+								"32"
 							]
 						},
 						"description": "Get a specific category by its ID."
@@ -1963,7 +1959,7 @@
 				{
 					"name": "Update Category",
 					"request": {
-						"method": "PUT",
+						"method": "POST",
 						"header": [
 							{
 								"key": "Content-Type",
@@ -1972,23 +1968,36 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Home Appliances\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Cosmetics",
+									"description": "Required",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Basic Consmetics update",
+									"description": "Optional",
+									"type": "text"
+								},
+								{
+									"key": "_method",
+									"value": "PUT",
+									"type": "text"
 								}
-							}
+							]
 						},
 						"url": {
-							"raw": "{{base_url}}/api/categories/1",
+							"raw": "{{base_url}}/api/categories/33",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"categories",
-								"1"
+								"33"
 							]
 						},
 						"description": "Update an existing category."
@@ -2040,14 +2049,14 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/categories/1",
+							"raw": "{{base_url}}/api/categories/33",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"categories",
-								"1"
+								"33"
 							]
 						},
 						"description": "Delete a category."
@@ -2150,13 +2159,21 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Samsung\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Samsung",
+									"description": "Required",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Basic Brand",
+									"description": "Optional",
+									"type": "text"
 								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/api/brands",
@@ -2216,14 +2233,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/brands/1",
+							"raw": "{{base_url}}/api/brands/51",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"brands",
-								"1"
+								"51"
 							]
 						},
 						"description": "Get a specific brand by its ID."
@@ -2263,7 +2280,7 @@
 				{
 					"name": "Update Brand",
 					"request": {
-						"method": "PUT",
+						"method": "POST",
 						"header": [
 							{
 								"key": "Content-Type",
@@ -2272,13 +2289,26 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"LG\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Samsung update",
+									"description": "Required",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Basic Brand",
+									"description": "Optional",
+									"type": "text"
+								},
+								{
+									"key": "_method",
+									"value": "PUT",
+									"type": "text"
 								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/api/brands/1",
@@ -2340,14 +2370,14 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/brands/1",
+							"raw": "{{base_url}}/api/brands/51",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"brands",
-								"1"
+								"51"
 							]
 						},
 						"description": "Delete a brand."
@@ -2450,13 +2480,15 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"PC\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "KB",
+									"description": "Required",
+									"type": "text"
 								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/api/units",
@@ -2516,14 +2548,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/units/1",
+							"raw": "{{base_url}}/api/units/41",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"units",
-								"1"
+								"41"
 							]
 						},
 						"description": "Get a specific unit by its ID."
@@ -2563,7 +2595,7 @@
 				{
 					"name": "Update Unit",
 					"request": {
-						"method": "PUT",
+						"method": "POST",
 						"header": [
 							{
 								"key": "Content-Type",
@@ -2572,23 +2604,29 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Box\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "KB",
+									"type": "text"
+								},
+								{
+									"key": "_method",
+									"value": "PUT",
+									"type": "text"
 								}
-							}
+							]
 						},
 						"url": {
-							"raw": "{{base_url}}/api/units/1",
+							"raw": "{{base_url}}/api/units/41",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"units",
-								"1"
+								"41"
 							]
 						},
 						"description": "Update an existing unit."
@@ -2640,14 +2678,14 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/units/1",
+							"raw": "{{base_url}}/api/units/41",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"units",
-								"1"
+								"41"
 							]
 						},
 						"description": "Delete a unit."
@@ -2720,52 +2758,63 @@
 								{
 									"key": "name",
 									"value": "Samsung Galaxy S24",
+									"description": "required",
 									"type": "text"
 								},
 								{
 									"key": "category_id",
 									"value": "1",
+									"description": "optional",
 									"type": "text"
 								},
 								{
 									"key": "brand_id",
 									"value": "1",
+									"description": "optional",
 									"type": "text"
 								},
 								{
 									"key": "unit_id",
 									"value": "1",
+									"description": "required",
 									"type": "text"
 								},
 								{
 									"key": "sku",
 									"value": "SMS-S24-BLK",
-									"type": "text"
+									"description": "optional",
+									"type": "text",
+									"disabled": true
 								},
 								{
 									"key": "purchase_price",
 									"value": "800",
+									"description": "required",
 									"type": "text"
 								},
 								{
 									"key": "selling_price",
 									"value": "1000",
+									"description": "required",
 									"type": "text"
 								},
 								{
-									"key": "stock_quantity",
+									"key": "quantity",
 									"value": "100",
+									"description": "optional",
 									"type": "text"
 								},
 								{
 									"key": "low_stock_threshold",
 									"value": "10",
+									"description": "optional",
 									"type": "text"
 								},
 								{
 									"key": "image",
+									"description": "optional",
 									"type": "file",
-									"src": "/path/to/your/image.jpg"
+									"src": "postman-cloud:///1eece46f-2514-48f0-a545-66353b4b1c6f"
 								}
 							]
 						},
@@ -2834,17 +2883,68 @@
 								{
 									"key": "_method",
 									"value": "PUT",
+									"description": "required",
 									"type": "text"
 								},
 								{
 									"key": "name",
-									"value": "Samsung Galaxy S24 Ultra",
+									"value": "Samsung Galaxy S24",
+									"description": "required",
+									"type": "text"
+								},
+								{
+									"key": "category_id",
+									"value": "1",
+									"description": "optional",
+									"type": "text"
+								},
+								{
+									"key": "brand_id",
+									"value": "1",
+									"description": "optional",
+									"type": "text"
+								},
+								{
+									"key": "unit_id",
+									"value": "1",
+									"description": "required",
+									"type": "text"
+								},
+								{
+									"key": "sku",
+									"value": "SMS-S24-BLK",
+									"description": "optional",
+									"type": "text"
+								},
+								{
+									"key": "purchase_price",
+									"value": "800",
+									"description": "required",
 									"type": "text"
 								},
 								{
 									"key": "selling_price",
-									"value": "1200",
+									"value": "1000",
+									"description": "required",
 									"type": "text"
+								},
+								{
+									"key": "quantity",
+									"value": "100",
+									"description": "optional",
+									"type": "text"
+								},
+								{
+									"key": "low_stock_threshold",
+									"value": "10",
+									"description": "optional",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"description": "optional",
+									"type": "file",
+									"src": "postman-cloud:///1ef3e8aa-60b9-42c0-b415-bfa54a7f4561"
 								}
 							]
 						},
@@ -2869,14 +2969,14 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/products/1",
+							"raw": "{{base_url}}/api/products/104",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"products",
-								"1"
+								"104"
 							]
 						},
 						"description": "Delete a product."
@@ -2885,6 +2985,1123 @@
 				}
 			],
 			"description": "CRUD operations for managing products"
+		},
+		{
+			"name": "Payment Methods Management",
+			"item": [
+				{
+					"name": "Get All Payment Methods",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payment-methods",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payment-methods"
+							]
+						},
+						"description": "Get all payment methods for the business."
+					},
+					"response": [
+						{
+							"name": "Successful Get All",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/payment-methods",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"payment-methods"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"name\": \"Cash\",\n            \"type\": \"cash\",\n            \"description\": \"Cash payments\",\n            \"is_active\": true,\n            \"business_id\": 1,\n            \"created_by\": 1,\n            \"created_at\": \"2025-06-29T10:00:00.000000Z\",\n            \"updated_at\": \"2025-06-29T10:00:00.000000Z\",\n            \"creator\": {\n                \"id\": 1,\n                \"name\": \"Admin User\",\n                \"user_type\": \"admin\"\n            }\n        },\n        {\n            \"id\": 2,\n            \"name\": \"Bank Transfer\",\n            \"type\": \"bank_transfer\",\n            \"description\": \"Direct bank transfers\",\n            \"account_number\": \"1234567890\",\n            \"bank_name\": \"ABC Bank\",\n            \"is_active\": true,\n            \"business_id\": 1,\n            \"created_by\": 1,\n            \"created_at\": \"2025-06-29T10:30:00.000000Z\",\n            \"updated_at\": \"2025-06-29T10:30:00.000000Z\",\n            \"creator\": {\n                \"id\": 1,\n                \"name\": \"Admin User\",\n                \"user_type\": \"admin\"\n            }\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Payment Method",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Credit Card",
+									"description": "Required",
+									"type": "text"
+								},
+								{
+									"key": "type",
+									"value": "credit_card",
+									"description": "Required: cash, bank_transfer, credit_card, debit_card, mobile_money, cheque",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Credit card payments",
+									"description": "Optional",
+									"type": "text"
+								},
+								{
+									"key": "account_number",
+									"value": "1234-5678-9012-3456",
+									"description": "Optional: For bank_transfer, credit_card, debit_card",
+									"type": "text"
+								},
+								{
+									"key": "bank_name",
+									"value": "XYZ Bank",
+									"description": "Optional: For bank_transfer, credit_card, debit_card",
+									"type": "text"
+								},
+								{
+									"key": "is_active",
+									"value": "1",
+									"description": "Optional: 1 for active, 0 for inactive",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payment-methods",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payment-methods"
+							]
+						},
+						"description": "Create a new payment method.\n\n**Required Fields:**\n- name: Payment method name\n- type: cash, bank_transfer, credit_card, debit_card, mobile_money, cheque\n\n**Optional Fields:**\n- description: Payment method description\n- account_number: Account/card number (for bank/card types)\n- bank_name: Bank name (for bank/card types)\n- is_active: 1 for active, 0 for inactive (default: 1)"
+					},
+					"response": [
+						{
+							"name": "Successful Creation",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Credit Card\",\n    \"type\": \"credit_card\",\n    \"description\": \"Credit card payments\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/payment-methods",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"payment-methods"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Payment method created successfully\",\n    \"data\": {\n        \"id\": 3,\n        \"name\": \"Credit Card\",\n        \"type\": \"credit_card\",\n        \"description\": \"Credit card payments\",\n        \"account_number\": null,\n        \"bank_name\": null,\n        \"is_active\": true,\n        \"business_id\": 1,\n        \"created_by\": 1,\n        \"created_at\": \"2025-06-29T11:00:00.000000Z\",\n        \"updated_at\": \"2025-06-29T11:00:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Payment Method by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payment-methods/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payment-methods",
+								"1"
+							]
+						},
+						"description": "Get a specific payment method by its ID."
+					},
+					"response": [
+						{
+							"name": "Successful Get by ID",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/payment-methods/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"payment-methods",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": 1,\n        \"name\": \"Cash\",\n        \"type\": \"cash\",\n        \"description\": \"Cash payments\",\n        \"account_number\": null,\n        \"bank_name\": null,\n        \"is_active\": true,\n        \"business_id\": 1,\n        \"created_by\": 1,\n        \"created_at\": \"2025-06-29T10:00:00.000000Z\",\n        \"updated_at\": \"2025-06-29T10:00:00.000000Z\",\n        \"creator\": {\n            \"id\": 1,\n            \"name\": \"Admin User\",\n            \"user_type\": \"admin\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Payment Method",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Updated Credit Card",
+									"description": "Optional",
+									"type": "text"
+								},
+								{
+									"key": "type",
+									"value": "credit_card",
+									"description": "Optional: cash, bank_transfer, credit_card, debit_card, mobile_money, cheque",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Updated description",
+									"description": "Optional",
+									"type": "text"
+								},
+								{
+									"key": "account_number",
+									"value": "9876-5432-1098-7654",
+									"description": "Optional",
+									"type": "text"
+								},
+								{
+									"key": "bank_name",
+									"value": "Updated Bank",
+									"description": "Optional",
+									"type": "text"
+								},
+								{
+									"key": "is_active",
+									"value": "1",
+									"description": "Optional: 1 for active, 0 for inactive",
+									"type": "text"
+								},
+								{
+									"key": "_method",
+									"value": "PUT",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payment-methods/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payment-methods",
+								"1"
+							]
+						},
+						"description": "Update an existing payment method.\n\n**Optional Fields:**\n- name: Payment method name\n- type: cash, bank_transfer, credit_card, debit_card, mobile_money, cheque\n- description: Payment method description\n- account_number: Account/card number\n- bank_name: Bank name\n- is_active: 1 for active, 0 for inactive\n\n**Note:** Use _method=PUT in form data for proper HTTP method override."
+					},
+					"response": [
+						{
+							"name": "Successful Update",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Updated Credit Card\",\n    \"description\": \"Updated description\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/payment-methods/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"payment-methods",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Payment method updated successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"name\": \"Updated Credit Card\",\n        \"type\": \"credit_card\",\n        \"description\": \"Updated description\",\n        \"account_number\": null,\n        \"bank_name\": null,\n        \"is_active\": true,\n        \"business_id\": 1,\n        \"created_by\": 1,\n        \"created_at\": \"2025-06-29T10:00:00.000000Z\",\n        \"updated_at\": \"2025-06-29T11:30:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Payment Method",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payment-methods/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payment-methods",
+								"1"
+							]
+						},
+						"description": "Delete a payment method.\n\n**Note:** Cannot delete a payment method that is being used in transactions."
+					},
+					"response": [
+						{
+							"name": "Successful Deletion",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/payment-methods/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"payment-methods",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Payment method deleted successfully\"\n}"
+						}
+					]
+				}
+			],
+			"description": "CRUD operations for managing payment methods (cash, bank transfer, credit card, etc.)"
+		},
+		{
+			"name": "Purchase Orders Management",
+			"item": [
+				{
+					"name": "Get All Purchase Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/purchase-orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"purchase-orders"
+							]
+						},
+						"description": "Get all purchase orders for the business with optional filtering.\n\n**Query Parameters (Optional):**\n- status: Filter by status (pending, confirmed, shipped, delivered, cancelled)\n- supplier_id: Filter by supplier\n- from_date: Filter from date (YYYY-MM-DD)\n- to_date: Filter to date (YYYY-MM-DD)"
+					},
+					"response": [
+						{
+							"name": "Successful Get All",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/purchase-orders",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"purchase-orders"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"order_number\": \"PO-2025-0001\",\n            \"supplier_id\": 2,\n            \"order_date\": \"2025-06-29\",\n            \"expected_delivery_date\": \"2025-07-05\",\n            \"status\": \"confirmed\",\n            \"total_amount\": \"5000.00\",\n            \"paid_amount\": \"2000.00\",\n            \"remaining_amount\": \"3000.00\",\n            \"notes\": \"Urgent order for new stock\",\n            \"business_id\": 1,\n            \"created_by\": 1,\n            \"created_at\": \"2025-06-29T10:00:00.000000Z\",\n            \"updated_at\": \"2025-06-29T10:00:00.000000Z\",\n            \"supplier\": {\n                \"id\": 2,\n                \"name\": \"ABC Suppliers\",\n                \"phone\": \"+1234567890\",\n                \"email\": \"supplier@abc.com\"\n            },\n            \"creator\": {\n                \"id\": 1,\n                \"name\": \"Admin User\"\n            },\n            \"items_count\": 3,\n            \"items\": [\n                {\n                    \"id\": 1,\n                    \"product_id\": 1,\n                    \"quantity\": 10,\n                    \"unit_price\": \"100.00\",\n                    \"total_price\": \"1000.00\",\n                    \"received_quantity\": 0,\n                    \"product\": {\n                        \"id\": 1,\n                        \"name\": \"Sample Product\",\n                        \"sku\": \"SP-001\"\n                    }\n                }\n            ]\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Purchase Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "supplier_id",
+									"value": "2",
+									"description": "Required: ID of the supplier",
+									"type": "text"
+								},
+								{
+									"key": "order_date",
+									"value": "2025-06-29",
+									"description": "Optional: Order date (YYYY-MM-DD), defaults to today",
+									"type": "text"
+								},
+								{
+									"key": "expected_delivery_date",
+									"value": "2025-07-05",
+									"description": "Optional: Expected delivery date (YYYY-MM-DD)",
+									"type": "text"
+								},
+								{
+									"key": "notes",
+									"value": "Urgent order for restocking",
+									"description": "Optional: Additional notes for the order",
+									"type": "text"
+								},
+								{
+									"key": "items[0][product_id]",
+									"value": "1",
+									"description": "Required: Product ID for first item",
+									"type": "text"
+								},
+								{
+									"key": "items[0][quantity]",
+									"value": "10",
+									"description": "Required: Quantity for first item",
+									"type": "text"
+								},
+								{
+									"key": "items[0][unit_price]",
+									"value": "100.00",
+									"description": "Required: Unit price for first item",
+									"type": "text"
+								},
+								{
+									"key": "items[1][product_id]",
+									"value": "2",
+									"description": "Optional: Product ID for second item",
+									"type": "text"
+								},
+								{
+									"key": "items[1][quantity]",
+									"value": "5",
+									"description": "Optional: Quantity for second item",
+									"type": "text"
+								},
+								{
+									"key": "items[1][unit_price]",
+									"value": "200.00",
+									"description": "Optional: Unit price for second item",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/purchase-orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"purchase-orders"
+							]
+						},
+						"description": "Create a new purchase order.\n\n**Required Fields:**\n- supplier_id: ID of the supplier\n- items[0][product_id]: Product ID for at least one item\n- items[0][quantity]: Quantity for the item\n- items[0][unit_price]: Unit price for the item\n\n**Optional Fields:**\n- order_date: Order date (defaults to today)\n- expected_delivery_date: Expected delivery date\n- notes: Additional notes\n- items[n][product_id]: Additional items\n- items[n][quantity]: Quantity for additional items\n- items[n][unit_price]: Unit price for additional items\n\n**Note:** You can add multiple items using array notation items[0], items[1], etc."
+					},
+					"response": [
+						{
+							"name": "Successful Creation",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"supplier_id\": 2,\n    \"order_date\": \"2025-06-29\",\n    \"expected_delivery_date\": \"2025-07-05\",\n    \"notes\": \"Urgent order\",\n    \"items\": [\n        {\n            \"product_id\": 1,\n            \"quantity\": 10,\n            \"unit_price\": 100.00\n        }\n    ]\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/purchase-orders",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"purchase-orders"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Purchase order created successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"order_number\": \"PO-2025-0001\",\n        \"supplier_id\": 2,\n        \"order_date\": \"2025-06-29\",\n        \"expected_delivery_date\": \"2025-07-05\",\n        \"status\": \"pending\",\n        \"total_amount\": \"1000.00\",\n        \"paid_amount\": \"0.00\",\n        \"remaining_amount\": \"1000.00\",\n        \"notes\": \"Urgent order\",\n        \"business_id\": 1,\n        \"created_by\": 1,\n        \"created_at\": \"2025-06-29T10:00:00.000000Z\",\n        \"updated_at\": \"2025-06-29T10:00:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Purchase Order by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/purchase-orders/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"purchase-orders",
+								"1"
+							]
+						},
+						"description": "Get a specific purchase order by its ID with complete details including items, shipments, and payments."
+					},
+					"response": [
+						{
+							"name": "Successful Get by ID",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/purchase-orders/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"purchase-orders",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": 1,\n        \"order_number\": \"PO-2025-0001\",\n        \"supplier_id\": 2,\n        \"order_date\": \"2025-06-29\",\n        \"expected_delivery_date\": \"2025-07-05\",\n        \"status\": \"confirmed\",\n        \"total_amount\": \"1000.00\",\n        \"paid_amount\": \"500.00\",\n        \"remaining_amount\": \"500.00\",\n        \"notes\": \"Urgent order\",\n        \"business_id\": 1,\n        \"created_by\": 1,\n        \"created_at\": \"2025-06-29T10:00:00.000000Z\",\n        \"updated_at\": \"2025-06-29T10:00:00.000000Z\",\n        \"supplier\": {\n            \"id\": 2,\n            \"name\": \"ABC Suppliers\",\n            \"phone\": \"+1234567890\",\n            \"email\": \"supplier@abc.com\"\n        },\n        \"items\": [\n            {\n                \"id\": 1,\n                \"product_id\": 1,\n                \"quantity\": 10,\n                \"unit_price\": \"100.00\",\n                \"total_price\": \"1000.00\",\n                \"received_quantity\": 8,\n                \"product\": {\n                    \"id\": 1,\n                    \"name\": \"Sample Product\",\n                    \"sku\": \"SP-001\"\n                }\n            }\n        ],\n        \"shipments\": [\n            {\n                \"id\": 1,\n                \"shipment_date\": \"2025-07-01\",\n                \"received_by\": 1,\n                \"notes\": \"Partial shipment\"\n            }\n        ],\n        \"payments\": [\n            {\n                \"id\": 1,\n                \"amount\": \"500.00\",\n                \"payment_method_id\": 1,\n                \"payment_date\": \"2025-06-29\",\n                \"reference_number\": \"PAY-001\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Purchase Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "supplier_id",
+									"value": "2",
+									"description": "Optional: Update supplier ID",
+									"type": "text"
+								},
+								{
+									"key": "order_date",
+									"value": "2025-06-30",
+									"description": "Optional: Update order date",
+									"type": "text"
+								},
+								{
+									"key": "expected_delivery_date",
+									"value": "2025-07-10",
+									"description": "Optional: Update expected delivery date",
+									"type": "text"
+								},
+								{
+									"key": "status",
+									"value": "confirmed",
+									"description": "Optional: pending, confirmed, shipped, delivered, cancelled",
+									"type": "text"
+								},
+								{
+									"key": "notes",
+									"value": "Updated order notes",
+									"description": "Optional: Update notes",
+									"type": "text"
+								},
+								{
+									"key": "_method",
+									"value": "PUT",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/purchase-orders/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"purchase-orders",
+								"1"
+							]
+						},
+						"description": "Update an existing purchase order.\n\n**Optional Fields:**\n- supplier_id: Update supplier\n- order_date: Update order date\n- expected_delivery_date: Update expected delivery date\n- status: pending, confirmed, shipped, delivered, cancelled\n- notes: Update notes\n\n**Note:** Use _method=PUT in form data. Cannot update items through this endpoint - items are managed separately."
+					},
+					"response": [
+						{
+							"name": "Successful Update",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"status\": \"confirmed\",\n    \"notes\": \"Updated order notes\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/purchase-orders/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"purchase-orders",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Purchase order updated successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"order_number\": \"PO-2025-0001\",\n        \"supplier_id\": 2,\n        \"order_date\": \"2025-06-29\",\n        \"expected_delivery_date\": \"2025-07-05\",\n        \"status\": \"confirmed\",\n        \"total_amount\": \"1000.00\",\n        \"paid_amount\": \"0.00\",\n        \"remaining_amount\": \"1000.00\",\n        \"notes\": \"Updated order notes\",\n        \"business_id\": 1,\n        \"created_by\": 1,\n        \"updated_at\": \"2025-06-29T11:00:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Receive Shipment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "shipment_date",
+									"value": "2025-07-01",
+									"description": "Optional: Shipment date (YYYY-MM-DD), defaults to today",
+									"type": "text"
+								},
+								{
+									"key": "notes",
+									"value": "Partial shipment received",
+									"description": "Optional: Shipment notes",
+									"type": "text"
+								},
+								{
+									"key": "items[0][purchase_order_item_id]",
+									"value": "1",
+									"description": "Required: Purchase order item ID",
+									"type": "text"
+								},
+								{
+									"key": "items[0][quantity_received]",
+									"value": "8",
+									"description": "Required: Quantity received for this item",
+									"type": "text"
+								},
+								{
+									"key": "items[1][purchase_order_item_id]",
+									"value": "2",
+									"description": "Optional: Additional item ID",
+									"type": "text"
+								},
+								{
+									"key": "items[1][quantity_received]",
+									"value": "5",
+									"description": "Optional: Quantity received for additional item",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/purchase-orders/1/shipments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"purchase-orders",
+								"1",
+								"shipments"
+							]
+						},
+						"description": "Receive a shipment for a purchase order.\n\n**Required Fields:**\n- items[0][purchase_order_item_id]: Purchase order item ID\n- items[0][quantity_received]: Quantity received\n\n**Optional Fields:**\n- shipment_date: Date of shipment (defaults to today)\n- notes: Shipment notes\n- items[n][purchase_order_item_id]: Additional items\n- items[n][quantity_received]: Additional quantities\n\n**Note:** This will automatically update product inventory."
+					},
+					"response": [
+						{
+							"name": "Successful Shipment",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"shipment_date\": \"2025-07-01\",\n    \"notes\": \"Partial shipment\",\n    \"items\": [\n        {\n            \"purchase_order_item_id\": 1,\n            \"quantity_received\": 8\n        }\n    ]\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/purchase-orders/1/shipments",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"purchase-orders",
+										"1",
+										"shipments"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Shipment received successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"purchase_order_id\": 1,\n        \"shipment_date\": \"2025-07-01\",\n        \"received_by\": 1,\n        \"notes\": \"Partial shipment\",\n        \"created_at\": \"2025-07-01T10:00:00.000000Z\",\n        \"items\": [\n            {\n                \"id\": 1,\n                \"purchase_order_item_id\": 1,\n                \"quantity_received\": 8,\n                \"product\": {\n                    \"id\": 1,\n                    \"name\": \"Sample Product\",\n                    \"sku\": \"SP-001\"\n                }\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Purchase Order Shipments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/purchase-orders/1/shipments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"purchase-orders",
+								"1",
+								"shipments"
+							]
+						},
+						"description": "Get all shipments for a specific purchase order."
+					},
+					"response": [
+						{
+							"name": "Successful Get Shipments",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/purchase-orders/1/shipments",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"purchase-orders",
+										"1",
+										"shipments"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"purchase_order_id\": 1,\n            \"shipment_date\": \"2025-07-01\",\n            \"received_by\": 1,\n            \"notes\": \"Partial shipment\",\n            \"created_at\": \"2025-07-01T10:00:00.000000Z\",\n            \"receiver\": {\n                \"id\": 1,\n                \"name\": \"Admin User\"\n            },\n            \"items\": [\n                {\n                    \"id\": 1,\n                    \"purchase_order_item_id\": 1,\n                    \"quantity_received\": 8,\n                    \"product\": {\n                        \"id\": 1,\n                        \"name\": \"Sample Product\",\n                        \"sku\": \"SP-001\"\n                    }\n                }\n            ]\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Add Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "amount",
+									"value": "1000.00",
+									"description": "Required: Payment amount",
+									"type": "text"
+								},
+								{
+									"key": "payment_method_id",
+									"value": "1",
+									"description": "Required: Payment method ID",
+									"type": "text"
+								},
+								{
+									"key": "payment_date",
+									"value": "2025-06-29",
+									"description": "Optional: Payment date (YYYY-MM-DD), defaults to today",
+									"type": "text"
+								},
+								{
+									"key": "reference_number",
+									"value": "PAY-001",
+									"description": "Optional: Payment reference number",
+									"type": "text"
+								},
+								{
+									"key": "notes",
+									"value": "Full payment for order",
+									"description": "Optional: Payment notes",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/purchase-orders/1/payments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"purchase-orders",
+								"1",
+								"payments"
+							]
+						},
+						"description": "Add a payment for a purchase order.\n\n**Required Fields:**\n- amount: Payment amount\n- payment_method_id: Payment method ID\n\n**Optional Fields:**\n- payment_date: Payment date (defaults to today)\n- reference_number: Payment reference\n- notes: Payment notes\n\n**Note:** Payment amount cannot exceed the remaining amount due."
+					},
+					"response": [
+						{
+							"name": "Successful Payment",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": 1000.00,\n    \"payment_method_id\": 1,\n    \"payment_date\": \"2025-06-29\",\n    \"reference_number\": \"PAY-001\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/purchase-orders/1/payments",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"purchase-orders",
+										"1",
+										"payments"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Payment added successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"purchase_order_id\": 1,\n        \"amount\": \"1000.00\",\n        \"payment_method_id\": 1,\n        \"payment_date\": \"2025-06-29\",\n        \"reference_number\": \"PAY-001\",\n        \"notes\": null,\n        \"created_by\": 1,\n        \"created_at\": \"2025-06-29T10:00:00.000000Z\",\n        \"payment_method\": {\n            \"id\": 1,\n            \"name\": \"Cash\",\n            \"type\": \"cash\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Cancel Purchase Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "cancellation_reason",
+									"value": "Supplier unable to fulfill order",
+									"description": "Optional: Reason for cancellation",
+									"type": "text"
+								},
+								{
+									"key": "_method",
+									"value": "PUT",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/purchase-orders/1/cancel",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"purchase-orders",
+								"1",
+								"cancel"
+							]
+						},
+						"description": "Cancel a purchase order.\n\n**Optional Fields:**\n- cancellation_reason: Reason for cancellation\n\n**Note:** Can only cancel orders with status 'pending' or 'confirmed'. Use _method=PUT in form data."
+					},
+					"response": [
+						{
+							"name": "Successful Cancellation",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"cancellation_reason\": \"Supplier unable to fulfill order\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/purchase-orders/1/cancel",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"purchase-orders",
+										"1",
+										"cancel"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Purchase order cancelled successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"order_number\": \"PO-2025-0001\",\n        \"status\": \"cancelled\",\n        \"cancellation_reason\": \"Supplier unable to fulfill order\",\n        \"cancelled_at\": \"2025-06-29T12:00:00.000000Z\",\n        \"cancelled_by\": 1\n    }\n}"
+						}
+					]
+				}
+			],
+			"description": "Complete purchase order management including creating orders, receiving shipments, managing payments, and order lifecycle"
 		}
 	],
 	"auth": {
