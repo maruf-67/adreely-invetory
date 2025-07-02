@@ -109,9 +109,7 @@ class PurchaseOrderController extends Controller
                 // Verify supplier belongs to the same business and has supplier role
                 $supplier = User::where('id', $request->supplier_id)
                     ->where('business_id', $user->business_id)
-                    ->whereHas('roles', function($query) {
-                        $query->where('name', 'supplier');
-                    })
+                    ->where('user_type', 'supplier')
                     ->first();
 
                 if (!$supplier) {
