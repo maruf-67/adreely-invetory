@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('reference_number')->nullable();
             $table->enum('status', ['pending', 'clear', 'bounced', 'cancelled'])->default('pending');
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
 
             // Add indexes for better performance
