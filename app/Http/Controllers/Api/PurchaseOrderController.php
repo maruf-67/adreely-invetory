@@ -222,10 +222,10 @@ class PurchaseOrderController extends Controller
             ], 404);
         }
 
-        if ($purchaseOrder->status !== 'pending') {
+        if ($purchaseOrder->status !== 'pending' && $purchaseOrder->status !== 'partial') {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot update purchase order that is not pending'
+                'message' => 'Cannot update purchase order that is not pending or partial'
             ], 400);
         }
 
