@@ -67,7 +67,7 @@ class PaymentMethodController extends Controller
             'name' => 'required|string|max:255',
             'type' => 'nullable|string|max:50',
             'account_number' => 'nullable|string|max:100',
-            'details' => 'nullable|array',
+            'details' => 'nullable|string|max:500', // Changed to string for flexibility
             'is_active' => 'boolean',
         ]);
 
