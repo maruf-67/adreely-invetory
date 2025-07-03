@@ -31,7 +31,7 @@ class ProductController extends Controller
     {
         $user = Auth::user();
         $query = Product::where('business_id', $user->business_id)
-            ->with(['category', 'brand', 'unit']);
+            ->with(['category', 'brand', 'unit', 'buyingUnit']);
 
         // Filter by category
         if ($request->has('category_id')) {
@@ -90,6 +90,7 @@ class ProductController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'brand_id' => 'nullable|exists:brands,id',
             'unit_id' => 'required|exists:units,id',
+            'buying_unit_id' => 'nullable|exists:units,id',
             'description' => 'nullable|string',
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
@@ -136,6 +137,16 @@ class ProductController extends Controller
             ], 400);
         }
 
+        if ($request->buying_unit_id) {
+            $buyingUnit = Unit::find($request->buying_unit_id);
+            if (!$buyingUnit || $buyingUnit->business_id !== $user->business_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid buying unit selected'
+                ], 400);
+            }
+        }
+
         // Handle image upload
         $imagePath = null;
         if ($request->hasFile('image')) {
@@ -153,6 +164,7 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'brand_id' => $request->brand_id,
             'unit_id' => $request->unit_id,
+            'buying_unit_id' => $request->buying_unit_id,
             'description' => $request->description,
             'purchase_price' => $request->purchase_price,
             'selling_price' => $request->selling_price,
@@ -163,7 +175,7 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Product created successfully',
-            'data' => $product->load(['category', 'brand', 'unit'])
+            'data' => $product->load(['category', 'brand', 'unit', 'buyingUnit'])
         ], 201);
     }
 
@@ -185,7 +197,7 @@ class ProductController extends Controller
         
         $product = Product::where('id', $id)
             ->where('business_id', $user->business_id)
-            ->with(['category', 'brand', 'unit'])
+            ->with(['category', 'brand', 'unit', 'buyingUnit'])
             ->first();
 
         if (!$product) {
@@ -239,6 +251,7 @@ class ProductController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'brand_id' => 'nullable|exists:brands,id',
             'unit_id' => 'sometimes|required|exists:units,id',
+            'buying_unit_id' => 'nullable|exists:units,id',
             'description' => 'nullable|string',
             'purchase_price' => 'sometimes|required|numeric|min:0',
             'selling_price' => 'sometimes|required|numeric|min:0',
@@ -285,8 +298,18 @@ class ProductController extends Controller
             }
         }
 
+        if ($request->has('buying_unit_id')) {
+            $buyingUnit = Unit::find($request->buying_unit_id);
+            if (!$buyingUnit || $buyingUnit->business_id !== $user->business_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid buying unit selected'
+                ], 400);
+            }
+        }
+
         $updateData = $request->only([
-            'name', 'sku', 'category_id', 'brand_id', 'unit_id', 
+            'name', 'sku', 'category_id', 'brand_id', 'unit_id', 'buying_unit_id',
             'description', 'purchase_price', 'selling_price', 'quantity', 'low_stock_threshold'
         ]);
 
@@ -309,7 +332,7 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Product updated successfully',
-            'data' => $product->load(['category', 'brand', 'unit'])
+            'data' => $product->load(['category', 'brand', 'unit', 'buyingUnit'])
         ]);
     }
 

@@ -20,6 +20,7 @@ class Product extends Model
         'category_id',
         'brand_id',
         'unit_id',
+        'buying_unit_id',
         'description',
         'purchase_price',
         'selling_price',
@@ -64,6 +65,14 @@ class Product extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    /**
+     * Get the buying unit for this product.
+     */
+    public function buyingUnit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'buying_unit_id');
     }
 
     /**
