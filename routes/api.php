@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\UnitController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PurchaseOrderController;
 use App\Http\Controllers\Api\PaymentMethodController;
+use App\Http\Controllers\Api\SalesOrderController;
+use App\Http\Controllers\Api\SalesOrderController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -108,5 +110,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/payments', [PurchaseOrderController::class, 'addPayment']);
         
         Route::put('/{id}/cancel', [PurchaseOrderController::class, 'cancel']);
+    });
+
+    // Sales Order management
+    Route::prefix('sales-orders')->group(function () {
+        Route::get('/', [SalesOrderController::class, 'index']);
+        Route::post('/', [SalesOrderController::class, 'store']);
+        Route::get('/{id}', [SalesOrderController::class, 'show']);
+        Route::put('/{id}', [SalesOrderController::class, 'update']);
+        Route::put('/{id}/items', [SalesOrderController::class, 'updateItems']);
+        Route::put('/{id}/confirm', [SalesOrderController::class, 'confirm']);
+        
+        // Shipment management
+        Route::post('/{id}/ship', [SalesOrderController::class, 'ship']);
+        Route::get('/{id}/shipments', [SalesOrderController::class, 'getShipments']);
+        
+        // Payment management
+        Route::post('/{id}/payments', [SalesOrderController::class, 'addPayment']);
+        
+        Route::put('/{id}/cancel', [SalesOrderController::class, 'cancel']);
     });
 });
