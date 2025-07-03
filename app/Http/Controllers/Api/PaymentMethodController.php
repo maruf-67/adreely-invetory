@@ -65,7 +65,8 @@ class PaymentMethodController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'type' => 'required|in:cash,bank_transfer,cheque,credit_card,digital_wallet,mobile_banking,other',
+            'type' => 'nullable|string|max:50',
+            'account_number' => 'nullable|string|max:100',
             'details' => 'nullable|array',
             'is_active' => 'boolean',
         ]);
@@ -85,6 +86,7 @@ class PaymentMethodController extends Controller
                 'business_id' => $user->business_id,
                 'name' => $request->name,
                 'type' => $request->type,
+                'account_number' => $request->account_number,
                 'details' => $request->details,
                 'is_active' => $request->get('is_active', true),
                 'created_by' => $user->id,
@@ -162,7 +164,8 @@ class PaymentMethodController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
-            'type' => 'sometimes|required|in:cash,bank_transfer,cheque,credit_card,digital_wallet,mobile_banking,other',
+            'type' => 'nullable|string|max:50',
+            'account_number' => 'nullable|string|max:100',
             'details' => 'nullable|array',
             'is_active' => 'boolean',
         ]);
@@ -179,6 +182,7 @@ class PaymentMethodController extends Controller
             $paymentMethod->update([
                 'name' => $request->get('name', $paymentMethod->name),
                 'type' => $request->get('type', $paymentMethod->type),
+                'account_number' => $request->get('account_number', $paymentMethod->account_number),
                 'details' => $request->has('details') ? $request->details : $paymentMethod->details,
                 'is_active' => $request->get('is_active', $paymentMethod->is_active),
                 'updated_by' => $user->id,
