@@ -68,6 +68,7 @@ class PaymentMethodController extends Controller
             'type' => 'nullable|string|max:50',
             'account_number' => 'nullable|string|max:100',
             'details' => 'nullable|string|max:500', // Changed to string for flexibility
+            'balance' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 
@@ -88,6 +89,7 @@ class PaymentMethodController extends Controller
                 'type' => $request->type,
                 'account_number' => $request->account_number,
                 'details' => $request->details,
+                'balance' => $request->get('balance', 0),
                 'is_active' => $request->get('is_active', true),
                 'created_by' => $user->id,
             ]);
@@ -167,6 +169,7 @@ class PaymentMethodController extends Controller
             'type' => 'nullable|string|max:50',
             'account_number' => 'nullable|string|max:100',
             'details' => 'nullable|array',
+            'balance' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 
@@ -184,6 +187,7 @@ class PaymentMethodController extends Controller
                 'type' => $request->get('type', $paymentMethod->type),
                 'account_number' => $request->get('account_number', $paymentMethod->account_number),
                 'details' => $request->has('details') ? $request->details : $paymentMethod->details,
+                'balance' => $request->has('balance') ? $request->balance : $paymentMethod->balance,
                 'is_active' => $request->get('is_active', $paymentMethod->is_active),
                 'updated_by' => $user->id,
             ]);
