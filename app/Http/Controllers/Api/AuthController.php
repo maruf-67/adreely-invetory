@@ -196,7 +196,7 @@ class AuthController extends Controller
      */
     public function profile(): JsonResponse
     {
-        $user = User::with(['business', 'creator'])->find(Auth::id());
+        $user = User::with(['business', 'creator','supplierPurchaseOrders','balanceRecords'])->find(Auth::id());
 
         return response()->json([
             'success' => true,

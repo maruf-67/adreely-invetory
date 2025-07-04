@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\UnitController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PurchaseOrderController;
 use App\Http\Controllers\Api\PaymentMethodController;
+use App\Http\Controllers\Api\UserBalanceController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -109,5 +110,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/payments', [PurchaseOrderController::class, 'addPayment']);
         
         Route::put('/{id}/cancel', [PurchaseOrderController::class, 'cancel']);
+    });
+
+    // User Balance management
+    Route::prefix('user-balances')->group(function () {
+        Route::get('/summary', [UserBalanceController::class, 'getBusinessBalanceSummary']);
+        Route::get('/{userId}', [UserBalanceController::class, 'getUserBalance']);
+        Route::get('/{userId}/history', [UserBalanceController::class, 'getUserBalanceHistory']);
+        Route::post('/{userId}/adjustment', [UserBalanceController::class, 'addBalanceAdjustment']);
+        Route::get('/{userId}/payments', [UserBalanceController::class, 'getUserPaymentHistory']);
     });
 });

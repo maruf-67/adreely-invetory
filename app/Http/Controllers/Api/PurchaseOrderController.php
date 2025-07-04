@@ -11,6 +11,7 @@ use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseShipment;
 use App\Models\PurchaseShipmentItem;
 use App\Models\User;
+use App\Models\UserBalance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -455,49 +456,68 @@ class PurchaseOrderController extends Controller
         }
 
         try {
-            $user = Auth::user();
-            $purchaseOrder = PurchaseOrder::where('business_id', $user->business_id)->find($id);
+            return DB::transaction(function () use ($request, $id) {
+                $user = Auth::user();
+                $purchaseOrder = PurchaseOrder::where('business_id', $user->business_id)->find($id);
 
-            if (!$purchaseOrder) {
+                if (!$purchaseOrder) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Purchase order not found'
+                    ], 404);
+                }
+
+                // Calculate current due amount
+                $dueAmount = $purchaseOrder->total_amount - $purchaseOrder->paid_amount;
+                $paymentAmount = $request->amount;
+                $isOverpayment = $paymentAmount > $dueAmount;
+                $extraAmount = $isOverpayment ? $paymentAmount - $dueAmount : 0;
+
+                // Create payment record
+                $payment = Payment::create([
+                    'business_id' => $user->business_id,
+                    'paymentable_type' => PurchaseOrder::class,
+                    'paymentable_id' => $purchaseOrder->id,
+                    'payment_method_id' => $request->payment_method_id,
+                    'amount' => $paymentAmount,
+                    'transaction_date' => $request->transaction_date,
+                    'details' => $request->details,
+                    'reference_number' => $request->reference_number,
+                    'status' => 'clear',
+                    'created_by' => $user->id,
+                ]);
+
+                // Update purchase order paid amount and handle overpayment
+                $purchaseOrder->updatePaidAmount();
+
+                // If there's an overpayment, create balance record for supplier
+                if ($extraAmount > 0) {
+                    UserBalance::createRecord(
+                        $user->business_id,
+                        $purchaseOrder->supplier_id,
+                        'credit',
+                        $extraAmount,
+                        "Overpayment for Purchase Order #{$purchaseOrder->order_number}",
+                        $payment,
+                        $request->reference_number
+                    );
+
+                    $message = "Payment added successfully with overpayment of " . number_format($extraAmount, 2) . " added to supplier balance";
+                } else {
+                    $message = 'Payment added successfully';
+                }
+
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Purchase order not found'
-                ], 404);
-            }
-
-            // Check if payment amount doesn't exceed due amount
-            $dueAmount = $purchaseOrder->total_amount - $purchaseOrder->paid_amount;
-            if ($request->amount > $dueAmount) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payment amount exceeds due amount'
-                ], 400);
-            }
-
-            $payment = Payment::create([
-                'business_id' => $user->business_id,
-                'paymentable_type' => PurchaseOrder::class,
-                'paymentable_id' => $purchaseOrder->id,
-                'payment_method_id' => $request->payment_method_id,
-                'amount' => $request->amount,
-                'transaction_date' => $request->transaction_date,
-                'details' => $request->details,
-                'reference_number' => $request->reference_number,
-                'status' => 'clear',
-                'created_by' => $user->id,
-            ]);
-
-            // Update purchase order paid amount
-            $purchaseOrder->updatePaidAmount();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment added successfully',
-                'data' => [
-                    'payment' => $payment->load('paymentMethod'),
-                    'purchase_order' => $purchaseOrder->fresh()
-                ]
-            ]);
+                    'success' => true,
+                    'message' => $message,
+                    'data' => [
+                        'payment' => $payment->load('paymentMethod'),
+                        'purchase_order' => $purchaseOrder->fresh(),
+                        'overpayment_amount' => $extraAmount,
+                        'supplier_balance' => $purchaseOrder->supplier->current_balance
+                    ]
+                ]);
+            });
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
