@@ -1783,6 +1783,102 @@
 			"description": "CRUD operations for managing users (staff, suppliers, retailers, dealers, wholesalers, guests)"
 		},
 		{
+			"name": "User Balance Management",
+			"item": [
+				{
+					"name": "Get Business Balance Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json", "type": "text" },
+							{ "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user-balances/summary",
+							"host": [ "{{base_url}}" ],
+							"path": [ "api", "user-balances", "summary" ]
+						},
+						"description": "Get the business-wide balance summary.\n\n**Access:** Admin and Staff only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Balance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json", "type": "text" },
+							{ "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user-balances/:userId",
+							"host": [ "{{base_url}}" ],
+							"path": [ "api", "user-balances", ":userId" ]
+						},
+						"description": "Get the balance for a specific user.\n\n**Path Parameter:**\n- userId: ID of the user\n\n**Access:** Admin and Staff only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Balance History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json", "type": "text" },
+							{ "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user-balances/:userId/history",
+							"host": [ "{{base_url}}" ],
+							"path": [ "api", "user-balances", ":userId", "history" ]
+						},
+						"description": "Get the balance history for a specific user.\n\n**Path Parameter:**\n- userId: ID of the user\n\n**Access:** Admin and Staff only."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Balance Adjustment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json", "type": "text" },
+							{ "key": "Content-Type", "value": "application/json", "type": "text" },
+							{ "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 100.00,\n  \"type\": \"credit\",\n  \"note\": \"Manual adjustment\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/user-balances/:userId/adjustment",
+							"host": [ "{{base_url}}" ],
+							"path": [ "api", "user-balances", ":userId", "adjustment" ]
+						},
+						"description": "Add a balance adjustment for a user.\n\n**Path Parameter:**\n- userId: ID of the user\n\n**Body:**\n- amount: Adjustment amount\n- type: credit or debit\n- note: Reason for adjustment (optional)\n\n**Access:** Admin and Staff only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Payment History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Accept", "value": "application/json", "type": "text" },
+							{ "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user-balances/:userId/payments",
+							"host": [ "{{base_url}}" ],
+							"path": [ "api", "user-balances", ":userId", "payments" ]
+						},
+						"description": "Get the payment history for a specific user.\n\n**Path Parameter:**\n- userId: ID of the user\n\n**Access:** Admin and Staff only."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing user balances, including summary, individual balances, history, adjustments, and payment history."
+		},
+		{
 			"name": "Brands Management",
 			"item": [
 				{
