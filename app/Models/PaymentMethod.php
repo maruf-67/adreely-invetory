@@ -16,6 +16,8 @@ class PaymentMethod extends Model
         'business_id',
         'name',
         'type',
+        'balance',
+        'account_number',
         'details',
         'is_active',
     ];

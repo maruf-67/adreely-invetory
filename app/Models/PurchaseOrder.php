@@ -25,6 +25,7 @@ class PurchaseOrder extends Model
         'total_amount',
         'paid_amount',
         'received_amount',
+        'extra_amount',
         'notes',
     ];
 
@@ -36,6 +37,7 @@ class PurchaseOrder extends Model
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'received_amount' => 'decimal:2',
+        'extra_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
     ];
 
@@ -136,6 +138,30 @@ class PurchaseOrder extends Model
     {
         $totalPaid = $this->payments()->where('status', 'clear')->sum('amount');
         $this->update(['paid_amount' => $totalPaid]);
+        
+        // Handle overpayment
+        $this->handleOverpayment();
+    }
+
+    /**
+     * Handle overpayment by updating extra_amount and supplier balance.
+     */
+    public function handleOverpayment(): void
+    {
+        $previousExtraAmount = $this->getOriginal('extra_amount') ?? 0;
+        $extraAmount = max(0, $this->paid_amount - $this->total_amount);
+        $extraAmountDifference = $extraAmount - $previousExtraAmount;
+        
+        if ($extraAmountDifference != 0) {
+            // Update extra_amount in purchase order
+            $this->update(['extra_amount' => $extraAmount]);
+            
+            // Update supplier balance only if there's a difference
+            if ($extraAmountDifference > 0) {
+                $supplier = $this->supplier;
+                $supplier->increment('current_balance', $extraAmountDifference);
+            }
+        }
     }
 
     /**

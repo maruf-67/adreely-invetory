@@ -15,8 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('business_id')->constrained()->onDelete('cascade');
             $table->string('name');
-            $table->enum('type', ['cash', 'bank_transfer', 'cheque', 'credit_card', 'digital_wallet','mobile_banking','other']);
+            $table->string('type')->nullable(); // Changed from enum to string
+            $table->string('account_number')->nullable(); // Added account number field
             $table->text('details')->nullable(); // Bank account details, wallet info, etc.
+            $table->decimal('balance', 15, 2)->default(0)->comment('Balance for the business owner in this payment method');
             $table->boolean('is_active')->default(true);
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');

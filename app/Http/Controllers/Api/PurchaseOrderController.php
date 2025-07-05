@@ -11,6 +11,8 @@ use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseShipment;
 use App\Models\PurchaseShipmentItem;
 use App\Models\User;
+use App\Models\PaymentMethod;
+use App\Models\UserBalance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -444,6 +446,7 @@ class PurchaseOrderController extends Controller
             'transaction_date' => 'required|date',
             'details' => 'nullable|string',
             'reference_number' => 'nullable|string',
+            'status' => 'nullable|in:pending,clear,bounced,cancelled',
         ]);
 
         if ($validator->fails()) {
@@ -455,53 +458,201 @@ class PurchaseOrderController extends Controller
         }
 
         try {
-            $user = Auth::user();
-            $purchaseOrder = PurchaseOrder::where('business_id', $user->business_id)->find($id);
+            return DB::transaction(function () use ($request, $id) {
+                $user = Auth::user();
+                $purchaseOrder = PurchaseOrder::where('business_id', $user->business_id)->find($id);
 
-            if (!$purchaseOrder) {
+                if (!$purchaseOrder) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Purchase order not found'
+                    ], 404);
+                }
+
+                // Get payment method to determine default status
+                $paymentMethod = PaymentMethod::find($request->payment_method_id);
+                
+                // Determine payment status
+                $paymentStatus = $request->status;
+                if (!$paymentStatus) {
+                    // Auto-determine based on payment method
+                    if (in_array($paymentMethod->type, ['cheque', 'check'])) {
+                        $paymentStatus = Payment::STATUS_PENDING;
+                    } elseif ($paymentMethod->type === 'bank_transfer') {
+                        $paymentStatus = Payment::STATUS_PENDING;
+                    } else {
+                        $paymentStatus = Payment::STATUS_CLEAR;
+                    }
+                }
+
+                // Calculate current due amount (only considering cleared payments)
+                $clearedPayments = $purchaseOrder->payments()->where('status', Payment::STATUS_CLEAR)->sum('amount');
+                $dueAmount = $purchaseOrder->total_amount - $clearedPayments;
+                $paymentAmount = $request->amount;
+
+                // Create payment record
+                $payment = Payment::create([
+                    'business_id' => $user->business_id,
+                    'paymentable_type' => PurchaseOrder::class,
+                    'paymentable_id' => $purchaseOrder->id,
+                    'payment_method_id' => $request->payment_method_id,
+                    'amount' => $paymentAmount,
+                    'transaction_date' => $request->transaction_date,
+                    'details' => $request->details,
+                    'reference_number' => $request->reference_number,
+                    'status' => $paymentStatus,
+                    'created_by' => $user->id,
+                ]);
+
+                $message = 'Payment added successfully';
+                $balanceEffect = [];
+
+                // Handle cleared payment effects
+                if ($paymentStatus === Payment::STATUS_CLEAR) {
+                    $balanceEffect = $this->handleClearedPaymentEffect($purchaseOrder, $payment);
+                    
+                    if ($balanceEffect['overpayment_amount'] > 0) {
+                        $message = "Payment added successfully with overpayment of " . number_format($balanceEffect['overpayment_amount'], 2) . " added to supplier balance";
+                    }
+                } else {
+                    // For non-cleared payments, just update the purchase order paid amount
+                    $purchaseOrder->updatePaidAmount();
+                    $message = "Payment added as {$paymentStatus}. Order balance will be updated when payment is cleared.";
+                    
+                    // Get current totals for response
+                    $balanceEffect = [
+                        'overpayment_amount' => 0,
+                        'cleared_total' => $purchaseOrder->payments()->where('status', Payment::STATUS_CLEAR)->sum('amount'),
+                        'remaining_due' => max(0, $purchaseOrder->total_amount - $purchaseOrder->payments()->where('status', Payment::STATUS_CLEAR)->sum('amount')),
+                        'supplier_balance' => $purchaseOrder->supplier->current_balance
+                    ];
+                }
+
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Purchase order not found'
-                ], 404);
-            }
-
-            // Check if payment amount doesn't exceed due amount
-            $dueAmount = $purchaseOrder->total_amount - $purchaseOrder->paid_amount;
-            if ($request->amount > $dueAmount) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payment amount exceeds due amount'
-                ], 400);
-            }
-
-            $payment = Payment::create([
-                'business_id' => $user->business_id,
-                'paymentable_type' => PurchaseOrder::class,
-                'paymentable_id' => $purchaseOrder->id,
-                'payment_method_id' => $request->payment_method_id,
-                'amount' => $request->amount,
-                'transaction_date' => $request->transaction_date,
-                'details' => $request->details,
-                'reference_number' => $request->reference_number,
-                'status' => 'clear',
-                'created_by' => $user->id,
-            ]);
-
-            // Update purchase order paid amount
-            $purchaseOrder->updatePaidAmount();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment added successfully',
-                'data' => [
-                    'payment' => $payment->load('paymentMethod'),
-                    'purchase_order' => $purchaseOrder->fresh()
-                ]
-            ]);
+                    'success' => true,
+                    'message' => $message,
+                    'data' => [
+                        'payment' => $payment->load('paymentMethod'),
+                        'purchase_order' => $purchaseOrder->fresh(),
+                        'payment_status' => $paymentStatus,
+                        'overpayment_amount' => $balanceEffect['overpayment_amount'],
+                        'supplier_balance' => $balanceEffect['supplier_balance'],
+                        'cleared_payments_total' => $balanceEffect['cleared_total'],
+                        'pending_payments_total' => $purchaseOrder->payments()->where('status', Payment::STATUS_PENDING)->sum('amount'),
+                        'remaining_due' => $balanceEffect['remaining_due']
+                    ]
+                ]);
+            });
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to add payment',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update payment status.
+     */
+    public function updatePaymentStatus(Request $request, $id, $paymentId): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:pending,clear,bounced,cancelled',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            return DB::transaction(function () use ($request, $id, $paymentId) {
+                $user = Auth::user();
+                $purchaseOrder = PurchaseOrder::where('business_id', $user->business_id)->find($id);
+
+                if (!$purchaseOrder) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Purchase order not found'
+                    ], 404);
+                }
+
+                $payment = $purchaseOrder->payments()->find($paymentId);
+
+                if (!$payment) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Payment not found'
+                    ], 404);
+                }
+
+                $oldStatus = $payment->status;
+                $newStatus = $request->status;
+
+                // Update payment status
+                $payment->update([
+                    'status' => $newStatus,
+                    'details' => $request->reason ? $payment->details . "\nStatus updated: " . $request->reason : $payment->details
+                ]);
+
+                $message = "Payment status updated from {$oldStatus} to {$newStatus}";
+                $balanceEffect = [];
+
+                // Handle balance effects based on status change
+                if ($oldStatus !== Payment::STATUS_CLEAR && $newStatus === Payment::STATUS_CLEAR) {
+                    // Payment is now cleared - apply balance effects
+                    $balanceEffect = $this->handleClearedPaymentEffect($purchaseOrder, $payment);
+                    if ($balanceEffect['overpayment_amount'] > 0) {
+                        $message .= " with overpayment of " . number_format($balanceEffect['overpayment_amount'], 2) . " added to supplier balance";
+                    }
+                } elseif ($oldStatus === Payment::STATUS_CLEAR && $newStatus !== Payment::STATUS_CLEAR) {
+                    // Payment is no longer cleared - reverse balance effects
+                    $balanceEffect = $this->handlePaymentReversalEffect($purchaseOrder, $payment);
+                    if ($balanceEffect['overpay_reduction'] > 0) {
+                        $message .= " with overpayment of " . number_format($balanceEffect['overpay_reduction'], 2) . " removed from supplier balance";
+                    }
+                } else {
+                    // Status change doesn't affect cleared status, just update purchase order totals
+                    $purchaseOrder->updatePaidAmount();
+                    $balanceEffect = [
+                        'overpayment_amount' => $purchaseOrder->extra_amount ?? 0,
+                        'cleared_total' => $purchaseOrder->payments()->where('status', Payment::STATUS_CLEAR)->sum('amount'),
+                        'remaining_due' => max(0, $purchaseOrder->total_amount - $purchaseOrder->payments()->where('status', Payment::STATUS_CLEAR)->sum('amount')),
+                        'supplier_balance' => $purchaseOrder->supplier->current_balance
+                    ];
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'data' => [
+                        'payment' => $payment->fresh()->load('paymentMethod'),
+                        'purchase_order' => $purchaseOrder->fresh(),
+                        'status_change' => [
+                            'old_status' => $oldStatus,
+                            'new_status' => $newStatus,
+                            'reason' => $request->reason
+                        ],
+                        'payment_summary' => [
+                            'cleared_total' => $balanceEffect['cleared_total'],
+                            'pending_total' => $purchaseOrder->payments()->where('status', Payment::STATUS_PENDING)->sum('amount'),
+                            'total_amount' => $purchaseOrder->total_amount,
+                            'remaining_due' => $balanceEffect['remaining_due'],
+                            'overpayment_amount' => $balanceEffect['overpayment_amount'] ?? $balanceEffect['new_overpay_total'] ?? 0
+                        ],
+                        'supplier_balance' => $balanceEffect['supplier_balance']
+                    ]
+                ]);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update payment status',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -766,5 +917,118 @@ class PurchaseOrderController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Handle cleared payment effects on purchase order balance and supplier balance.
+     * This function is called whenever a payment becomes cleared (either new payment or status update).
+     * 
+     * @param PurchaseOrder $purchaseOrder The purchase order
+     * @param Payment $payment The payment that was cleared
+     * @return array Returns overpayment information
+     */
+    private function handleClearedPaymentEffect(PurchaseOrder $purchaseOrder, Payment $payment): array
+    {
+        // Recalculate purchase order paid amount (only cleared payments)
+        $purchaseOrder->updatePaidAmount();
+        
+        // Calculate current totals
+        $clearedPayments = $purchaseOrder->payments()->where('status', Payment::STATUS_CLEAR)->sum('amount');
+        $totalAmount = $purchaseOrder->total_amount;
+        $overpaymentAmount = max(0, $clearedPayments - $totalAmount);
+        
+        // Update purchase order extra_amount field
+        $purchaseOrder->update(['extra_amount' => $overpaymentAmount]);
+        
+        // Handle supplier balance for overpayment
+        if ($overpaymentAmount > 0) {
+            // Calculate how much overpayment this specific payment contributed
+            $previousClearedPayments = $purchaseOrder->payments()
+                ->where('status', Payment::STATUS_CLEAR)
+                ->where('id', '!=', $payment->id)
+                ->sum('amount');
+            
+            $previousOverpay = max(0, $previousClearedPayments - $totalAmount);
+            $newOverpayFromThisPayment = $overpaymentAmount - $previousOverpay;
+            
+            if ($newOverpayFromThisPayment > 0) {
+                // Update supplier balance
+                $supplier = $purchaseOrder->supplier;
+                $supplier->increment('current_balance', $newOverpayFromThisPayment);
+                
+                // Create balance history record
+                UserBalance::createRecord(
+                    $purchaseOrder->business_id,
+                    $supplier->id,
+                    'credit',
+                    $newOverpayFromThisPayment,
+                    "Overpayment from Purchase Order #{$purchaseOrder->order_number} - Payment #{$payment->id}",
+                    $payment,
+                    $payment->reference_number
+                );
+            }
+        }
+        
+        return [
+            'overpayment_amount' => $overpaymentAmount,
+            'cleared_total' => $clearedPayments,
+            'remaining_due' => max(0, $totalAmount - $clearedPayments),
+            'supplier_balance' => $purchaseOrder->supplier->fresh()->current_balance
+        ];
+    }
+
+    /**
+     * Handle payment reversal effects when payment status changes from clear to non-clear.
+     * This function reverses balance effects when a payment is no longer cleared.
+     * 
+     * @param PurchaseOrder $purchaseOrder The purchase order
+     * @param Payment $payment The payment that is no longer cleared
+     * @return array Returns reversal information
+     */
+    private function handlePaymentReversalEffect(PurchaseOrder $purchaseOrder, Payment $payment): array
+    {
+        // Calculate what overpayment was before including this payment
+        $clearedPaymentsWithThisPayment = $purchaseOrder->payments()
+            ->where('status', Payment::STATUS_CLEAR)
+            ->sum('amount') + $payment->amount; // Add back this payment amount
+            
+        $clearedPaymentsWithoutThisPayment = $purchaseOrder->payments()
+            ->where('status', Payment::STATUS_CLEAR)
+            ->where('id', '!=', $payment->id)
+            ->sum('amount');
+        
+        $totalAmount = $purchaseOrder->total_amount;
+        $previousOverpay = max(0, $clearedPaymentsWithThisPayment - $totalAmount);
+        $newOverpay = max(0, $clearedPaymentsWithoutThisPayment - $totalAmount);
+        $overpayReduction = $previousOverpay - $newOverpay;
+        
+        // Update purchase order paid amount and extra amount
+        $purchaseOrder->updatePaidAmount();
+        $purchaseOrder->update(['extra_amount' => $newOverpay]);
+        
+        // Handle supplier balance reversal
+        if ($overpayReduction > 0) {
+            $supplier = $purchaseOrder->supplier;
+            $supplier->decrement('current_balance', $overpayReduction);
+            
+            // Create balance history record for reversal
+            UserBalance::createRecord(
+                $purchaseOrder->business_id,
+                $supplier->id,
+                'debit',
+                $overpayReduction,
+                "Payment reversal for Purchase Order #{$purchaseOrder->order_number} - Payment #{$payment->id} status changed to {$payment->status}",
+                $payment,
+                $payment->reference_number
+            );
+        }
+        
+        return [
+            'overpay_reduction' => $overpayReduction,
+            'new_overpay_total' => $newOverpay,
+            'cleared_total' => $clearedPaymentsWithoutThisPayment,
+            'remaining_due' => max(0, $totalAmount - $clearedPaymentsWithoutThisPayment),
+            'supplier_balance' => $supplier->fresh()->current_balance
+        ];
     }
 }

@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('total_amount', 15, 2);
             $table->decimal('paid_amount', 15, 2)->default(0);
             $table->decimal('received_amount', 15, 2)->default(0);
+            $table->decimal('extra_amount', 15, 2)->default(0)->comment('Extra amount paid beyond total_amount, to be added to supplier balance');
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');

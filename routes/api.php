@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\UnitController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PurchaseOrderController;
 use App\Http\Controllers\Api\PaymentMethodController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\UserBalanceController;
 use App\Http\Controllers\Api\SalesOrderController;
 use App\Http\Controllers\Api\SalesOrderController;
 use Illuminate\Support\Facades\Route;
@@ -101,15 +103,35 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [PurchaseOrderController::class, 'store']);
         Route::get('/{id}', [PurchaseOrderController::class, 'show']);
         Route::put('/{id}', [PurchaseOrderController::class, 'update']);
-        
+        Route::put('/{id}/items', [PurchaseOrderController::class, 'updateItems']);
+                
         // Shipment management
         Route::post('/{id}/shipments', [PurchaseOrderController::class, 'receiveShipment']);
         Route::get('/{id}/shipments', [PurchaseOrderController::class, 'getShipments']);
         
         // Payment management
         Route::post('/{id}/payments', [PurchaseOrderController::class, 'addPayment']);
+        Route::put('/{id}/payments/{paymentId}/status', [PurchaseOrderController::class, 'updatePaymentStatus']);
         
         Route::put('/{id}/cancel', [PurchaseOrderController::class, 'cancel']);
+    });
+
+    // User Balance management
+    Route::prefix('user-balances')->group(function () {
+        Route::get('/summary', [UserBalanceController::class, 'getBusinessBalanceSummary']);
+        Route::get('/{userId}', [UserBalanceController::class, 'getUserBalance']);
+        Route::get('/{userId}/history', [UserBalanceController::class, 'getUserBalanceHistory']);
+        Route::post('/{userId}/adjustment', [UserBalanceController::class, 'addBalanceAdjustment']);
+        Route::get('/{userId}/payments', [UserBalanceController::class, 'getUserPaymentHistory']);
+    });
+
+    // Payment management
+    Route::prefix('payments')->group(function () {
+        Route::get('/', [PaymentController::class, 'index']);
+        Route::get('/summary', [PaymentController::class, 'getSummary']);
+        Route::get('/pending', [PaymentController::class, 'getPendingPayments']);
+        Route::put('/{id}/status', [PaymentController::class, 'updateStatus']);
+        Route::put('/bulk-status', [PaymentController::class, 'bulkUpdateStatus']);
     });
 
     // Sales Order management
