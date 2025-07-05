@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\UnitController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PurchaseOrderController;
 use App\Http\Controllers\Api\PaymentMethodController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\UserBalanceController;
 use Illuminate\Support\Facades\Route;
 
@@ -108,6 +109,7 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Payment management
         Route::post('/{id}/payments', [PurchaseOrderController::class, 'addPayment']);
+        Route::put('/{id}/payments/{paymentId}/status', [PurchaseOrderController::class, 'updatePaymentStatus']);
         
         Route::put('/{id}/cancel', [PurchaseOrderController::class, 'cancel']);
     });
@@ -119,5 +121,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{userId}/history', [UserBalanceController::class, 'getUserBalanceHistory']);
         Route::post('/{userId}/adjustment', [UserBalanceController::class, 'addBalanceAdjustment']);
         Route::get('/{userId}/payments', [UserBalanceController::class, 'getUserPaymentHistory']);
+    });
+
+    // Payment management
+    Route::prefix('payments')->group(function () {
+        Route::get('/', [PaymentController::class, 'index']);
+        Route::get('/summary', [PaymentController::class, 'getSummary']);
+        Route::get('/pending', [PaymentController::class, 'getPendingPayments']);
+        Route::put('/{id}/status', [PaymentController::class, 'updateStatus']);
+        Route::put('/bulk-status', [PaymentController::class, 'bulkUpdateStatus']);
     });
 });
