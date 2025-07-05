@@ -15,14 +15,21 @@ return new class extends Migration
             $table->id();
             $table->foreignId('business_id')->constrained()->onDelete('cascade');
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
-            $table->enum('type', ['stock-in', 'stock-out', 'adjustment']);
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->enum('type', ['stock-in', 'stock-out', 'adjustment','other']);
             $table->integer('quantity_change');
-            $table->string('reason')->nullable();
-            $table->morphs('reference'); // reference_id and reference_type
+            $table->integer('quantity_before');
+            $table->integer('quantity_after');
+            $table->string('reason');
+            $table->morphs('reference'); // reference_type and reference_id
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
+
+            // Add indexes for better performance
+            $table->index(['business_id', 'product_id']);
+            $table->index(['business_id', 'type']);
+            $table->index(['business_id', 'created_at']);
         });
     }
 

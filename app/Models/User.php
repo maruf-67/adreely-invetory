@@ -105,12 +105,20 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all balance records for this user.
+     */
+    public function balanceRecords(): HasMany
+    {
+        return $this->hasMany(UserBalance::class);
+    }
+
+    /**
      * Get all sales orders as customer.
      */
-    public function customerSalesOrders(): HasMany
-    {
-        return $this->hasMany(SalesOrder::class, 'customer_id');
-    }
+    // public function customerSalesOrders(): HasMany
+    // {
+    //     return $this->hasMany(SalesOrder::class, 'customer_id');
+    // }
 
     /**
      * Get all purchase orders created by this user.
@@ -123,8 +131,74 @@ class User extends Authenticatable
     /**
      * Get all sales orders created by this user.
      */
-    public function createdSalesOrders(): HasMany
+    // public function createdSalesOrders(): HasMany
+    // {
+    //     return $this->hasMany(SalesOrder::class, 'created_by');
+    // }
+
+    /**
+     * Update user balance.
+     */
+    public function updateBalance(float $amount, string $type = 'credit'): void
     {
-        return $this->hasMany(SalesOrder::class, 'created_by');
+        if ($type === 'credit') {
+            $this->increment('current_balance', $amount);
+        } else {
+            $this->decrement('current_balance', $amount);
+        }
     }
+
+    /**
+     * Get total balance (previous + current).
+     */
+    public function getTotalBalance(): float
+    {
+        return $this->previous_due - $this->previous_credit + $this->current_balance;
+    }
+
+    /**
+     * Check if user has sufficient balance.
+     */
+    public function hasSufficientBalance(float $amount): bool
+    {
+        return $this->getTotalBalance() >= $amount;
+    }
+
+    /**
+     * Get balance status (positive = credit, negative = due).
+     */
+    public function getBalanceStatus(): array
+    {
+        $totalBalance = $this->getTotalBalance();
+        
+        return [
+            'total_balance' => $totalBalance,
+            'status' => $totalBalance >= 0 ? 'credit' : 'due',
+            'absolute_amount' => abs($totalBalance),
+        ];
+    }
+
+    /**
+     * Get all payments made by this user as supplier.
+     */
+    public function supplierPayments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'paymentable_id')
+                    ->where('paymentable_type', PurchaseOrder::class)
+                    ->whereHas('paymentable', function ($query) {
+                        $query->where('supplier_id', $this->id);
+                    });
+    }
+
+    /**
+     * Get all payments made by this user as customer.
+     */
+    // public function customerPayments(): HasMany
+    // {
+    //     return $this->hasMany(Payment::class, 'paymentable_id')
+    //                 ->where('paymentable_type', SalesOrder::class)
+    //                 ->whereHas('paymentable', function ($query) {
+    //                     $query->where('customer_id', $this->id);
+    //                 });
+    // }
 }

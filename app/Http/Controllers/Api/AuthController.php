@@ -15,6 +15,21 @@ class AuthController extends Controller
 {
     /**
      * Register a new admin user (business owner)
+     *
+     * Registers a new admin user and optionally creates a business.
+     *
+     * Features:
+     * - Validates user and business data
+     * - Creates a business if business_name is provided
+     * - Creates an admin user and links to business
+     * - Issues an access token for API usage
+     *
+     * Security considerations:
+     * - Ensures unique email for user
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing registration data
+     * @return \Illuminate\Http\JsonResponse Registered user info and token or error message
      */
     public function register(Request $request): JsonResponse
     {
@@ -68,7 +83,23 @@ class AuthController extends Controller
     }
 
     /**
-     * Login user (only admin and staff)
+     * Log in an admin or staff user.
+     *
+     * Authenticates an admin or staff user and issues an access token for API usage.
+     *
+     * Features:
+     * - Validates credentials
+     * - Checks user type (admin/staff)
+     * - Issues access token
+     * - Returns user info and token
+     *
+     * Security considerations:
+     * - Only admin and staff users can log in
+     * - Input validation prevents malicious data injection
+     * - Returns error for invalid credentials or unauthorized access
+     *
+     * @param Request $request The request containing login credentials
+     * @return \Illuminate\Http\JsonResponse Authenticated user info or error message
      */
     public function login(Request $request): JsonResponse
     {
@@ -126,7 +157,19 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout user
+     * Log out the authenticated user.
+     *
+     * Revokes the current access token for the authenticated user.
+     *
+     * Features:
+     * - Deletes the current access token
+     * - Returns confirmation message
+     *
+     * Security considerations:
+     * - Only authenticated users can log out
+     *
+     * @param Request $request The request instance
+     * @return \Illuminate\Http\JsonResponse Success confirmation
      */
     public function logout(Request $request): JsonResponse
     {
@@ -139,11 +182,21 @@ class AuthController extends Controller
     }
 
     /**
-     * Get user profile
+     * Retrieve the authenticated user's profile.
+     *
+     * Loads the user's profile, business, and creator information.
+     *
+     * Features:
+     * - Returns user, business, and creator info
+     *
+     * Security considerations:
+     * - Only authenticated users can access their profile
+     *
+     * @return \Illuminate\Http\JsonResponse User profile data
      */
     public function profile(): JsonResponse
     {
-        $user = User::with(['business', 'creator'])->find(Auth::id());
+        $user = User::with(['business', 'creator','supplierPurchaseOrders','balanceRecords'])->find(Auth::id());
 
         return response()->json([
             'success' => true,
@@ -152,7 +205,20 @@ class AuthController extends Controller
     }
 
     /**
-     * Update user profile
+     * Update the authenticated user's profile.
+     *
+     * Allows the user to update their profile information and image.
+     *
+     * Features:
+     * - Validates and updates user profile fields
+     * - Handles image upload and replacement
+     *
+     * Security considerations:
+     * - Only authenticated users can update their profile
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing profile updates
+     * @return \Illuminate\Http\JsonResponse Updated user profile or error message
      */
     public function updateProfile(Request $request): JsonResponse
     {
@@ -209,7 +275,20 @@ class AuthController extends Controller
     }
 
     /**
-     * Change password
+     * Change the authenticated user's password.
+     *
+     * Allows the user to change their password after validating the current password.
+     *
+     * Features:
+     * - Validates current and new passwords
+     * - Updates password securely
+     *
+     * Security considerations:
+     * - Only authenticated users can change their password
+     * - Input validation and password hashing
+     *
+     * @param Request $request The request containing password data
+     * @return \Illuminate\Http\JsonResponse Success or error message
      */
     public function changePassword(Request $request): JsonResponse
     {
@@ -248,7 +327,19 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout from all devices
+     * Log out from all devices.
+     *
+     * Revokes all access tokens for the authenticated user, logging them out from all devices.
+     *
+     * Features:
+     * - Deletes all tokens for the user
+     * - Returns confirmation message
+     *
+     * Security considerations:
+     * - Only authenticated users can log out from all devices
+     *
+     * @param Request $request The request instance
+     * @return \Illuminate\Http\JsonResponse Success confirmation
      */
     public function logoutAll(Request $request): JsonResponse
     {

@@ -4,11 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
-use App\Models\PurchaseOrder;
-use App\Models\SalesOrder;
-use App\Models\PaymentMethod;
-use Illuminate\Http\Request;
+use App\Models\UserBalance;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -16,17 +14,17 @@ use Illuminate\Support\Facades\Validator;
 class PaymentController extends Controller
 {
     /**
-     * Display a listing of payments for the business.
+     * Get all payments for the business.
      */
     public function index(Request $request): JsonResponse
     {
         $user = Auth::user();
         $query = Payment::where('business_id', $user->business_id)
-            ->with(['paymentMethod']);
+                       ->with(['paymentMethod', 'paymentable']);
 
-        // Filter by payment type
-        if ($request->has('paymentable_type')) {
-            $query->where('paymentable_type', $request->paymentable_type);
+        // Filter by status
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
         }
 
         // Filter by payment method
@@ -34,15 +32,24 @@ class PaymentController extends Controller
             $query->where('payment_method_id', $request->payment_method_id);
         }
 
-        // Date range filter
-        if ($request->has('from_date')) {
-            $query->whereDate('transaction_date', '>=', $request->from_date);
-        }
-        if ($request->has('to_date')) {
-            $query->whereDate('transaction_date', '<=', $request->to_date);
+        // Filter by date range
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('transaction_date', [$request->start_date, $request->end_date]);
         }
 
-        $payments = $query->latest()->paginate(15);
+        // Filter by paymentable type
+        if ($request->has('type')) {
+            $types = [
+                'purchase' => 'App\\Models\\PurchaseOrder',
+                'sales' => 'App\\Models\\SalesOrder',
+            ];
+            if (isset($types[$request->type])) {
+                $query->where('paymentable_type', $types[$request->type]);
+            }
+        }
+
+        $payments = $query->orderBy('transaction_date', 'desc')
+                         ->paginate($request->get('per_page', 15));
 
         return response()->json([
             'success' => true,
@@ -51,119 +58,54 @@ class PaymentController extends Controller
     }
 
     /**
-     * Store a newly created payment.
+     * Get payment summary by status.
      */
-    public function store(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'paymentable_id' => 'required|integer',
-            'paymentable_type' => 'required|in:App\Models\PurchaseOrder,App\Models\SalesOrder',
-            'payment_method_id' => 'required|exists:payment_methods,id',
-            'amount' => 'required|numeric|min:0.01',
-            'transaction_date' => 'required|date',
-            'details' => 'nullable|string',
-            'status' => 'nullable|in:pending,clear,hold,rejected',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            return DB::transaction(function () use ($request) {
-                $user = Auth::user();
-
-                // Validate payment method belongs to same business
-                $paymentMethod = PaymentMethod::where('id', $request->payment_method_id)
-                    ->where('business_id', $user->business_id)
-                    ->first();
-
-                if (!$paymentMethod) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Invalid payment method selected'
-                    ], 400);
-                }
-
-                // Get the order
-                $orderModel = $request->paymentable_type;
-                $order = $orderModel::where('id', $request->paymentable_id)
-                    ->where('business_id', $user->business_id)
-                    ->first();
-
-                if (!$order) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Order not found'
-                    ], 404);
-                }
-
-                // Check if payment amount doesn't exceed due amount
-                $dueAmount = $order->total_amount - $order->paid_amount;
-                if ($request->amount > $dueAmount) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Payment amount cannot exceed due amount of {$dueAmount}"
-                    ], 400);
-                }
-
-                // Create payment
-                $payment = Payment::create([
-                    'business_id' => $user->business_id,
-                    'paymentable_id' => $request->paymentable_id,
-                    'paymentable_type' => $request->paymentable_type,
-                    'payment_method_id' => $request->payment_method_id,
-                    'amount' => $request->amount,
-                    'transaction_date' => $request->transaction_date,
-                    'details' => $request->details,
-                    'status' => $request->status ?? 'clear',
-                    'created_by' => $user->id,
-                ]);
-
-                // Update order paid amount if payment is not pending
-                if ($payment->status !== 'pending') {
-                    $order->increment('paid_amount', $request->amount);
-                }
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Payment recorded successfully',
-                    'data' => $payment->load('paymentMethod')
-                ], 201);
-            });
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to record payment',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Display the specified payment.
-     */
-    public function show($id): JsonResponse
+    public function getSummary(Request $request): JsonResponse
     {
         $user = Auth::user();
-        $payment = Payment::where('business_id', $user->business_id)
-            ->with(['paymentMethod', 'creator'])
-            ->find($id);
+        
+        $query = Payment::where('business_id', $user->business_id);
 
-        if (!$payment) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payment not found'
-            ], 404);
+        // Filter by date range if provided
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('transaction_date', [$request->start_date, $request->end_date]);
         }
+
+        $summary = $query->selectRaw('
+            status,
+            COUNT(*) as count,
+            SUM(amount) as total_amount
+        ')
+        ->groupBy('status')
+        ->get()
+        ->keyBy('status');
+
+        // Get payment method breakdown
+        $methodBreakdown = Payment::where('business_id', $user->business_id)
+            ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->selectRaw('
+                payment_methods.name as method_name,
+                payment_methods.type as method_type,
+                payments.status,
+                COUNT(*) as count,
+                SUM(payments.amount) as total_amount
+            ')
+            ->groupBy('payment_methods.id', 'payment_methods.name', 'payment_methods.type', 'payments.status')
+            ->get()
+            ->groupBy('method_name');
 
         return response()->json([
             'success' => true,
-            'data' => $payment
+            'data' => [
+                'status_summary' => $summary,
+                'method_breakdown' => $methodBreakdown,
+                'totals' => [
+                    'cleared' => $summary[Payment::STATUS_CLEAR]->total_amount ?? 0,
+                    'pending' => $summary[Payment::STATUS_PENDING]->total_amount ?? 0,
+                    'bounced' => $summary[Payment::STATUS_BOUNCED]->total_amount ?? 0,
+                    'cancelled' => $summary[Payment::STATUS_CANCELLED]->total_amount ?? 0,
+                ]
+            ]
         ]);
     }
 
@@ -173,7 +115,8 @@ class PaymentController extends Controller
     public function updateStatus(Request $request, $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:pending,clear,hold,rejected',
+            'status' => 'required|in:pending,clear,bounced,cancelled',
+            'reason' => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -199,30 +142,27 @@ class PaymentController extends Controller
                 $oldStatus = $payment->status;
                 $newStatus = $request->status;
 
-                // Get the related order
-                $orderModel = $payment->paymentable_type;
-                $order = $orderModel::find($payment->paymentable_id);
-
-                // Handle status transitions
-                if ($oldStatus === 'pending' && $newStatus === 'clear') {
-                    // Payment confirmed - add to order paid amount
-                    $order->increment('paid_amount', $payment->amount);
-                } elseif ($oldStatus === 'clear' && $newStatus === 'pending') {
-                    // Payment reverted - subtract from order paid amount
-                    $order->decrement('paid_amount', $payment->amount);
-                } elseif ($oldStatus === 'clear' && $newStatus === 'rejected') {
-                    // Payment rejected - subtract from order paid amount
-                    $order->decrement('paid_amount', $payment->amount);
-                } elseif ($oldStatus === 'pending' && $newStatus === 'rejected') {
-                    // Pending payment rejected - no change to order amount
+                if ($oldStatus === $newStatus) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Payment is already in the requested status'
+                    ], 400);
                 }
 
-                $payment->update(['status' => $newStatus]);
+                // Update payment status
+                $payment->updateStatus($newStatus, $request->reason);
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Payment status updated successfully',
-                    'data' => $payment
+                    'message' => "Payment status updated from {$oldStatus} to {$newStatus}",
+                    'data' => [
+                        'payment' => $payment->fresh()->load(['paymentMethod', 'paymentable']),
+                        'status_change' => [
+                            'old_status' => $oldStatus,
+                            'new_status' => $newStatus,
+                            'reason' => $request->reason
+                        ]
+                    ]
                 ]);
             });
         } catch (\Exception $e) {
@@ -235,71 +175,109 @@ class PaymentController extends Controller
     }
 
     /**
-     * Get payments for a specific order.
+     * Get pending payments that need attention.
      */
-    public function getOrderPayments($orderType, $orderId): JsonResponse
-    {
-        $user = Auth::user();
-        
-        $allowedTypes = ['purchase-orders', 'sales-orders'];
-        if (!in_array($orderType, $allowedTypes)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid order type'
-            ], 400);
-        }
-
-        $paymentableType = $orderType === 'purchase-orders' 
-            ? 'App\Models\PurchaseOrder' 
-            : 'App\Models\SalesOrder';
-
-        $payments = Payment::where('business_id', $user->business_id)
-            ->where('paymentable_type', $paymentableType)
-            ->where('paymentable_id', $orderId)
-            ->with(['paymentMethod', 'creator'])
-            ->latest()
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $payments
-        ]);
-    }
-
-    /**
-     * Get payment analytics.
-     */
-    public function analytics(Request $request): JsonResponse
+    public function getPendingPayments(Request $request): JsonResponse
     {
         $user = Auth::user();
         
         $query = Payment::where('business_id', $user->business_id)
-            ->where('status', 'clear');
+                       ->where('status', Payment::STATUS_PENDING)
+                       ->with(['paymentMethod', 'paymentable']);
 
-        // Date range filter
-        if ($request->has('from_date')) {
-            $query->whereDate('transaction_date', '>=', $request->from_date);
+        // Filter by payment method type (e.g., only cheques)
+        if ($request->has('method_type')) {
+            $query->whereHas('paymentMethod', function ($q) use ($request) {
+                $q->where('type', $request->method_type);
+            });
         }
-        if ($request->has('to_date')) {
-            $query->whereDate('transaction_date', '<=', $request->to_date);
+
+        // Filter by date range
+        if ($request->has('days_old')) {
+            $daysOld = (int) $request->days_old;
+            $query->where('transaction_date', '<=', now()->subDays($daysOld)->toDateString());
         }
 
-        $totalReceived = $query->where('paymentable_type', 'App\Models\SalesOrder')->sum('amount');
-        $totalPaid = $query->where('paymentable_type', 'App\Models\PurchaseOrder')->sum('amount');
-
-        $paymentMethodBreakdown = $query->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-            ->selectRaw('payment_methods.gateway_name, SUM(payments.amount) as total')
-            ->groupBy('payment_methods.gateway_name')
-            ->get();
+        $pendingPayments = $query->orderBy('transaction_date', 'asc')
+                                ->paginate($request->get('per_page', 15));
 
         return response()->json([
             'success' => true,
-            'data' => [
-                'total_received' => $totalReceived,
-                'total_paid' => $totalPaid,
-                'net_cash_flow' => $totalReceived - $totalPaid,
-                'payment_method_breakdown' => $paymentMethodBreakdown
+            'data' => $pendingPayments,
+            'summary' => [
+                'total_pending_amount' => $query->sum('amount'),
+                'total_pending_count' => $query->count(),
+                'oldest_payment' => $query->orderBy('transaction_date', 'asc')->first()?->transaction_date
             ]
         ]);
+    }
+
+    /**
+     * Bulk update payment statuses.
+     */
+    public function bulkUpdateStatus(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'payment_ids' => 'required|array|min:1',
+            'payment_ids.*' => 'required|integer|exists:payments,id',
+            'status' => 'required|in:pending,clear,bounced,cancelled',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            return DB::transaction(function () use ($request) {
+                $user = Auth::user();
+                $paymentIds = $request->payment_ids;
+                $newStatus = $request->status;
+                $reason = $request->reason;
+
+                $payments = Payment::where('business_id', $user->business_id)
+                                 ->whereIn('id', $paymentIds)
+                                 ->get();
+
+                if ($payments->count() !== count($paymentIds)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'One or more payments not found'
+                    ], 404);
+                }
+
+                $updated = [];
+                foreach ($payments as $payment) {
+                    $oldStatus = $payment->status;
+                    if ($oldStatus !== $newStatus) {
+                        $payment->updateStatus($newStatus, $reason);
+                        $updated[] = [
+                            'id' => $payment->id,
+                            'old_status' => $oldStatus,
+                            'new_status' => $newStatus
+                        ];
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Updated " . count($updated) . " payment(s) to {$newStatus} status",
+                    'data' => [
+                        'updated_payments' => $updated,
+                        'total_updated' => count($updated)
+                    ]
+                ]);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to bulk update payment statuses',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

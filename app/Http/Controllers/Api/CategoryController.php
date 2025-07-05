@@ -12,7 +12,16 @@ use Illuminate\Support\Facades\Validator;
 class CategoryController extends Controller
 {
     /**
-     * Display a listing of categories for the business.
+     * List all categories for the authenticated user's business.
+     *
+     * Features:
+     * - Retrieves all categories belonging to the user's business
+     * - Returns category data in JSON format
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business categories
+     *
+     * @return \Illuminate\Http\JsonResponse List of categories
      */
     public function index(): JsonResponse
     {
@@ -26,7 +35,18 @@ class CategoryController extends Controller
     }
 
     /**
-     * Store a newly created category.
+     * Create a new category for the authenticated user's business.
+     *
+     * Features:
+     * - Validates category data
+     * - Creates a new category record
+     *
+     * Security considerations:
+     * - Only authenticated users can create categories for their business
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing category data
+     * @return \Illuminate\Http\JsonResponse Created category or error message
      */
     public function store(Request $request): JsonResponse
     {
@@ -61,7 +81,16 @@ class CategoryController extends Controller
     }
 
     /**
-     * Display the specified category.
+     * Retrieve a specific category by ID for the authenticated user's business.
+     *
+     * Features:
+     * - Loads a category by ID if it belongs to the user's business
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business categories
+     *
+     * @param int $id The category ID
+     * @return \Illuminate\Http\JsonResponse Category data or error message
      */
     public function show($id): JsonResponse
     {
@@ -85,7 +114,18 @@ class CategoryController extends Controller
     }
 
     /**
-     * Update the specified category.
+     * Update a specific category for the authenticated user's business.
+     *
+     * Features:
+     * - Validates and updates category data
+     *
+     * Security considerations:
+     * - Only authenticated users can update their business categories
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing category updates
+     * @param int $id The category ID
+     * @return \Illuminate\Http\JsonResponse Updated category or error message
      */
     public function update(Request $request, $id): JsonResponse
     {
@@ -126,7 +166,18 @@ class CategoryController extends Controller
     }
 
     /**
-     * Remove the specified category.
+     * Delete a specific category from the authenticated user's business.
+     *
+     * Features:
+     * - Deletes a category if it has no products
+     * - Returns confirmation message
+     *
+     * Security considerations:
+     * - Only authenticated users can delete their business categories
+     * - Prevents deletion if category is in use by products
+     *
+     * @param int $id The category ID
+     * @return \Illuminate\Http\JsonResponse Success or error message
      */
     public function destroy($id): JsonResponse
     {

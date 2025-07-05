@@ -8,18 +8,9 @@ use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\UnitController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PurchaseOrderController;
-use App\Http\Controllers\Api\SalesOrderController;
-use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PaymentMethodController;
-use App\Http\Controllers\Api\ExpenseController;
-use App\Http\Controllers\Api\ExpenseCategoryController;
-use App\Http\Controllers\Api\SalaryController;
-use App\Http\Controllers\Api\InventoryHistoryController;
-use App\Http\Controllers\Api\ReportController;
-use App\Http\Controllers\Api\InvestmentController;
-use App\Http\Controllers\Api\InvestorController;
-use App\Http\Controllers\Api\ExtraIncomeController;
-use App\Http\Controllers\Api\ExtraIncomeTypeController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\UserBalanceController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -95,131 +86,49 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [ProductController::class, 'destroy']);
     });
 
-    // Purchase Order management
-    Route::prefix('purchase-orders')->group(function () {
-        Route::get('/', [PurchaseOrderController::class, 'index']);
-        Route::post('/', [PurchaseOrderController::class, 'store']);
-        Route::get('/{id}', [PurchaseOrderController::class, 'show']);
-        Route::put('/{id}', [PurchaseOrderController::class, 'update']);
-        Route::post('/{id}/receive-goods', [PurchaseOrderController::class, 'receiveGoods']);
-        Route::put('/{id}/cancel', [PurchaseOrderController::class, 'cancel']);
-    });
-
-    // Sales Order management
-    Route::prefix('sales-orders')->group(function () {
-        Route::get('/', [SalesOrderController::class, 'index']);
-        Route::post('/', [SalesOrderController::class, 'store']);
-        Route::get('/analytics', [SalesOrderController::class, 'analytics']);
-        Route::get('/{id}', [SalesOrderController::class, 'show']);
-        Route::put('/{id}', [SalesOrderController::class, 'update']);
-        Route::put('/{id}/cancel', [SalesOrderController::class, 'cancel']);
-    });
-
-    // Payment management
-    Route::prefix('payments')->group(function () {
-        Route::get('/', [PaymentController::class, 'index']);
-        Route::post('/', [PaymentController::class, 'store']);
-        Route::get('/analytics', [PaymentController::class, 'analytics']);
-        Route::get('/{orderType}/{orderId}', [PaymentController::class, 'getOrderPayments']);
-        Route::get('/{id}', [PaymentController::class, 'show']);
-        Route::put('/{id}/status', [PaymentController::class, 'updateStatus']);
-    });
-
     // Payment Methods management
     Route::prefix('payment-methods')->group(function () {
         Route::get('/', [PaymentMethodController::class, 'index']);
         Route::post('/', [PaymentMethodController::class, 'store']);
         Route::get('/{id}', [PaymentMethodController::class, 'show']);
         Route::put('/{id}', [PaymentMethodController::class, 'update']);
-        Route::put('/{id}/toggle-status', [PaymentMethodController::class, 'toggleStatus']);
         Route::delete('/{id}', [PaymentMethodController::class, 'destroy']);
     });
 
-    // Expense Categories management
-    Route::prefix('expense-categories')->group(function () {
-        Route::get('/', [ExpenseCategoryController::class, 'index']);
-        Route::post('/', [ExpenseCategoryController::class, 'store']);
-        Route::get('/{id}', [ExpenseCategoryController::class, 'show']);
-        Route::put('/{id}', [ExpenseCategoryController::class, 'update']);
-        Route::delete('/{id}', [ExpenseCategoryController::class, 'destroy']);
+    // Purchase Order management
+    Route::prefix('purchase-orders')->group(function () {
+        Route::get('/', [PurchaseOrderController::class, 'index']);
+        Route::post('/', [PurchaseOrderController::class, 'store']);
+        Route::get('/{id}', [PurchaseOrderController::class, 'show']);
+        Route::put('/{id}', [PurchaseOrderController::class, 'update']);
+        Route::put('/{id}/items', [PurchaseOrderController::class, 'updateItems']);
+                
+        // Shipment management
+        Route::post('/{id}/shipments', [PurchaseOrderController::class, 'receiveShipment']);
+        Route::get('/{id}/shipments', [PurchaseOrderController::class, 'getShipments']);
+        
+        // Payment management
+        Route::post('/{id}/payments', [PurchaseOrderController::class, 'addPayment']);
+        Route::put('/{id}/payments/{paymentId}/status', [PurchaseOrderController::class, 'updatePaymentStatus']);
+        
+        Route::put('/{id}/cancel', [PurchaseOrderController::class, 'cancel']);
     });
 
-    // Expenses management
-    Route::prefix('expenses')->group(function () {
-        Route::get('/', [ExpenseController::class, 'index']);
-        Route::post('/', [ExpenseController::class, 'store']);
-        Route::get('/analytics', [ExpenseController::class, 'analytics']);
-        Route::get('/{id}', [ExpenseController::class, 'show']);
-        Route::put('/{id}', [ExpenseController::class, 'update']);
-        Route::delete('/{id}', [ExpenseController::class, 'destroy']);
+    // User Balance management
+    Route::prefix('user-balances')->group(function () {
+        Route::get('/summary', [UserBalanceController::class, 'getBusinessBalanceSummary']);
+        Route::get('/{userId}', [UserBalanceController::class, 'getUserBalance']);
+        Route::get('/{userId}/history', [UserBalanceController::class, 'getUserBalanceHistory']);
+        Route::post('/{userId}/adjustment', [UserBalanceController::class, 'addBalanceAdjustment']);
+        Route::get('/{userId}/payments', [UserBalanceController::class, 'getUserPaymentHistory']);
     });
 
-    // Salary management
-    Route::prefix('salaries')->group(function () {
-        Route::get('/', [SalaryController::class, 'index']);
-        Route::post('/', [SalaryController::class, 'store']);
-        Route::get('/analytics', [SalaryController::class, 'analytics']);
-        Route::get('/employee/{employeeId}', [SalaryController::class, 'employeeSummary']);
-        Route::get('/{id}', [SalaryController::class, 'show']);
-        Route::put('/{id}', [SalaryController::class, 'update']);
-        Route::delete('/{id}', [SalaryController::class, 'destroy']);
-    });
-
-    // Inventory management
-    Route::prefix('inventory')->group(function () {
-        Route::get('/history', [InventoryHistoryController::class, 'index']);
-        Route::post('/stock-adjustment', [InventoryHistoryController::class, 'stockAdjustment']);
-        Route::get('/low-stock-alert', [InventoryHistoryController::class, 'lowStockAlert']);
-        Route::get('/stock-valuation', [InventoryHistoryController::class, 'stockValuation']);
-        Route::get('/analytics', [InventoryHistoryController::class, 'analytics']);
-        Route::get('/product/{productId}/report', [InventoryHistoryController::class, 'productStockReport']);
-    });
-
-    // Reports and Analytics
-    Route::prefix('reports')->group(function () {
-        Route::get('/dashboard', [ReportController::class, 'dashboard']);
-        Route::get('/profit-loss', [ReportController::class, 'profitLoss']);
-        Route::get('/sales', [ReportController::class, 'salesReport']);
-        Route::get('/inventory', [ReportController::class, 'inventoryReport']);
-        Route::get('/customer-balances', [ReportController::class, 'customerBalances']);
-        Route::get('/business-analytics', [ReportController::class, 'businessAnalytics']);
-    });
-
-    // Investment management
-    Route::prefix('investments')->group(function () {
-        Route::get('/', [InvestmentController::class, 'index']);
-        Route::post('/', [InvestmentController::class, 'store']);
-        Route::get('/summary', [InvestmentController::class, 'summary']);
-        Route::get('/{investment}', [InvestmentController::class, 'show']);
-        Route::put('/{investment}', [InvestmentController::class, 'update']);
-        Route::delete('/{investment}', [InvestmentController::class, 'destroy']);
-    });
-
-    // Investor management
-    Route::prefix('investors')->group(function () {
-        Route::get('/', [InvestorController::class, 'index']);
-        Route::post('/', [InvestorController::class, 'store']);
-        Route::get('/{investor}', [InvestorController::class, 'show']);
-        Route::put('/{investor}', [InvestorController::class, 'update']);
-        Route::delete('/{investor}', [InvestorController::class, 'destroy']);
-    });
-
-    // Extra income management
-    Route::prefix('extra-incomes')->group(function () {
-        Route::get('/', [ExtraIncomeController::class, 'index']);
-        Route::post('/', [ExtraIncomeController::class, 'store']);
-        Route::get('/summary', [ExtraIncomeController::class, 'summary']);
-        Route::get('/{extraIncome}', [ExtraIncomeController::class, 'show']);
-        Route::put('/{extraIncome}', [ExtraIncomeController::class, 'update']);
-        Route::delete('/{extraIncome}', [ExtraIncomeController::class, 'destroy']);
-    });
-
-    // Extra income type management
-    Route::prefix('extra-income-types')->group(function () {
-        Route::get('/', [ExtraIncomeTypeController::class, 'index']);
-        Route::post('/', [ExtraIncomeTypeController::class, 'store']);
-        Route::get('/{extraIncomeType}', [ExtraIncomeTypeController::class, 'show']);
-        Route::put('/{extraIncomeType}', [ExtraIncomeTypeController::class, 'update']);
-        Route::delete('/{extraIncomeType}', [ExtraIncomeTypeController::class, 'destroy']);
+    // Payment management
+    Route::prefix('payments')->group(function () {
+        Route::get('/', [PaymentController::class, 'index']);
+        Route::get('/summary', [PaymentController::class, 'getSummary']);
+        Route::get('/pending', [PaymentController::class, 'getPendingPayments']);
+        Route::put('/{id}/status', [PaymentController::class, 'updateStatus']);
+        Route::put('/bulk-status', [PaymentController::class, 'bulkUpdateStatus']);
     });
 });

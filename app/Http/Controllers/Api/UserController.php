@@ -13,7 +13,17 @@ use Illuminate\Support\Facades\Validator;
 class UserController extends Controller
 {
     /**
-     * Display a listing of users for the business.
+     * List all users for the authenticated user's business.
+     *
+     * Features:
+     * - Retrieves users with optional filters (user_type, party_type)
+     * - Only admin and staff can view all users
+     *
+     * Security considerations:
+     * - Only admin and staff can access user lists
+     *
+     * @param Request $request The request containing filter parameters
+     * @return \Illuminate\Http\JsonResponse List of users or error message
      */
     public function index(Request $request): JsonResponse
     {
@@ -57,7 +67,19 @@ class UserController extends Controller
     }
 
     /**
-     * Store a newly created user.
+     * Create a new user for the authenticated user's business.
+     *
+     * Features:
+     * - Validates user data
+     * - Handles image upload
+     * - Only admin and staff can create users
+     *
+     * Security considerations:
+     * - Only admin and staff can create users
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing user data
+     * @return \Illuminate\Http\JsonResponse Created user or error message
      */
     public function store(Request $request): JsonResponse
     {
@@ -139,7 +161,17 @@ class UserController extends Controller
     }
 
     /**
-     * Display the specified user.
+     * Retrieve a specific user by ID for the authenticated user's business.
+     *
+     * Features:
+     * - Loads a user by ID if user has access
+     * - Only admin and staff can view user details
+     *
+     * Security considerations:
+     * - Only admin and staff can access user details
+     *
+     * @param int $id The user ID
+     * @return \Illuminate\Http\JsonResponse User data or error message
      */
     public function show($id): JsonResponse
     {
@@ -177,7 +209,20 @@ class UserController extends Controller
     }
 
     /**
-     * Update the specified user.
+     * Update a specific user for the authenticated user's business.
+     *
+     * Features:
+     * - Validates and updates user data
+     * - Handles image upload and password update
+     * - Only admin and staff can update users
+     *
+     * Security considerations:
+     * - Only admin and staff can update users
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing user updates
+     * @param int $id The user ID
+     * @return \Illuminate\Http\JsonResponse Updated user or error message
      */
     public function update(Request $request, $id): JsonResponse
     {
@@ -276,7 +321,19 @@ class UserController extends Controller
     }
 
     /**
-     * Remove the specified user.
+     * Delete a specific user from the authenticated user's business.
+     *
+     * Features:
+     * - Deletes a user if allowed
+     * - Only admin can delete users
+     * - Prevents self-deletion
+     *
+     * Security considerations:
+     * - Only admin can delete users
+     * - Prevents self-deletion
+     *
+     * @param int $id The user ID
+     * @return \Illuminate\Http\JsonResponse Success or error message
      */
     public function destroy($id): JsonResponse
     {
@@ -329,7 +386,17 @@ class UserController extends Controller
     }
 
     /**
-     * Get users by type (suppliers, retailers, etc.)
+     * List users by type (supplier, retailer, etc.) for the authenticated user's business.
+     *
+     * Features:
+     * - Retrieves users by type
+     * - Only admin and staff can view users by type
+     *
+     * Security considerations:
+     * - Only admin and staff can access user lists by type
+     *
+     * @param string $type The user type
+     * @return \Illuminate\Http\JsonResponse List of users or error message
      */
     public function getByType(string $type): JsonResponse
     {

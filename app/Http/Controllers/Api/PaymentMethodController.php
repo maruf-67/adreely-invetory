@@ -4,22 +4,42 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentMethod;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class PaymentMethodController extends Controller
 {
     /**
-     * Display a listing of payment methods for the business.
+     * List all payment methods for the authenticated user's business.
+     *
+     * Features:
+     * - Retrieves payment methods with optional filters (active, type)
+     * - Returns payment method data in JSON format
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business payment methods
+     *
+     * @param Request $request The request containing filter parameters
+     * @return \Illuminate\Http\JsonResponse List of payment methods
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $user = Auth::user();
-        $paymentMethods = PaymentMethod::where('business_id', $user->business_id)
-            ->latest()
-            ->get();
+        $query = PaymentMethod::where('business_id', $user->business_id);
+
+        // Filter by active status
+        if ($request->has('active_only') && $request->active_only) {
+            $query->where('is_active', true);
+        }
+
+        // Filter by type
+        if ($request->has('type')) {
+            $query->where('type', $request->type);
+        }
+
+        $paymentMethods = $query->orderBy('name')->get();
 
         return response()->json([
             'success' => true,
@@ -28,16 +48,27 @@ class PaymentMethodController extends Controller
     }
 
     /**
-     * Store a newly created payment method.
+     * Create a new payment method for the authenticated user's business.
+     *
+     * Features:
+     * - Validates payment method data
+     * - Creates a new payment method record
+     *
+     * Security considerations:
+     * - Only authenticated users can create payment methods for their business
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing payment method data
+     * @return \Illuminate\Http\JsonResponse Created payment method or error message
      */
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'gateway_name' => 'required|string|max:255',
-            'account_name' => 'nullable|string|max:255',
-            'account_number' => 'nullable|string|max:255',
-            'branch' => 'nullable|string|max:255',
-            'currency' => 'nullable|string|max:10',
+            'name' => 'required|string|max:255',
+            'type' => 'nullable|string|max:50',
+            'account_number' => 'nullable|string|max:100',
+            'details' => 'nullable|string|max:500', // Changed to string for flexibility
+            'balance' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 
@@ -49,27 +80,45 @@ class PaymentMethodController extends Controller
             ], 422);
         }
 
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        $paymentMethod = PaymentMethod::create([
-            'business_id' => $user->business_id,
-            'gateway_name' => $request->gateway_name,
-            'account_name' => $request->account_name,
-            'account_number' => $request->account_number,
-            'branch' => $request->branch,
-            'currency' => $request->currency,
-            'is_active' => $request->is_active ?? true,
-        ]);
+            $paymentMethod = PaymentMethod::create([
+                'business_id' => $user->business_id,
+                'name' => $request->name,
+                'type' => $request->type,
+                'account_number' => $request->account_number,
+                'details' => $request->details,
+                'balance' => $request->get('balance', 0),
+                'is_active' => $request->get('is_active', true),
+                'created_by' => $user->id,
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Payment method created successfully',
-            'data' => $paymentMethod
-        ], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment method created successfully',
+                'data' => $paymentMethod
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create payment method',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Display the specified payment method.
+     * Retrieve a specific payment method by ID for the authenticated user's business.
+     *
+     * Features:
+     * - Loads a payment method by ID if it belongs to the user's business
+     *
+     * Security considerations:
+     * - Only authenticated users can access their business payment methods
+     *
+     * @param int $id The payment method ID
+     * @return \Illuminate\Http\JsonResponse Payment method data or error message
      */
     public function show($id): JsonResponse
     {
@@ -90,7 +139,18 @@ class PaymentMethodController extends Controller
     }
 
     /**
-     * Update the specified payment method.
+     * Update a specific payment method for the authenticated user's business.
+     *
+     * Features:
+     * - Validates and updates payment method data
+     *
+     * Security considerations:
+     * - Only authenticated users can update their business payment methods
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing payment method updates
+     * @param int $id The payment method ID
+     * @return \Illuminate\Http\JsonResponse Updated payment method or error message
      */
     public function update(Request $request, $id): JsonResponse
     {
@@ -105,11 +165,11 @@ class PaymentMethodController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'gateway_name' => 'required|string|max:255',
-            'account_name' => 'nullable|string|max:255',
-            'account_number' => 'nullable|string|max:255',
-            'branch' => 'nullable|string|max:255',
-            'currency' => 'nullable|string|max:10',
+            'name' => 'sometimes|required|string|max:255',
+            'type' => 'nullable|string|max:50',
+            'account_number' => 'nullable|string|max:100',
+            'details' => 'nullable|array',
+            'balance' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 
@@ -121,24 +181,44 @@ class PaymentMethodController extends Controller
             ], 422);
         }
 
-        $paymentMethod->update($request->only([
-            'gateway_name',
-            'account_name',
-            'account_number',
-            'branch',
-            'currency',
-            'is_active'
-        ]));
+        try {
+            $paymentMethod->update([
+                'name' => $request->get('name', $paymentMethod->name),
+                'type' => $request->get('type', $paymentMethod->type),
+                'account_number' => $request->get('account_number', $paymentMethod->account_number),
+                'details' => $request->has('details') ? $request->details : $paymentMethod->details,
+                'balance' => $request->has('balance') ? $request->balance : $paymentMethod->balance,
+                'is_active' => $request->get('is_active', $paymentMethod->is_active),
+                'updated_by' => $user->id,
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Payment method updated successfully',
-            'data' => $paymentMethod
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment method updated successfully',
+                'data' => $paymentMethod
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update payment method',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Remove the specified payment method.
+     * Delete a specific payment method from the authenticated user's business.
+     *
+     * Features:
+     * - Deletes a payment method if not used in transactions
+     * - Returns confirmation message
+     *
+     * Security considerations:
+     * - Only authenticated users can delete their business payment methods
+     * - Prevents deletion if payment method is in use
+     *
+     * @param int $id The payment method ID
+     * @return \Illuminate\Http\JsonResponse Success or error message
      */
     public function destroy($id): JsonResponse
     {
@@ -156,39 +236,23 @@ class PaymentMethodController extends Controller
         if ($paymentMethod->payments()->count() > 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete payment method that has associated payments'
+                'message' => 'Cannot delete payment method that has been used in transactions'
             ], 400);
         }
 
-        $paymentMethod->delete();
+        try {
+            $paymentMethod->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Payment method deleted successfully'
-        ]);
-    }
-
-    /**
-     * Toggle payment method status.
-     */
-    public function toggleStatus($id): JsonResponse
-    {
-        $user = Auth::user();
-        $paymentMethod = PaymentMethod::where('business_id', $user->business_id)->find($id);
-
-        if (!$paymentMethod) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment method deleted successfully'
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Payment method not found'
-            ], 404);
+                'message' => 'Failed to delete payment method',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $paymentMethod->update(['is_active' => !$paymentMethod->is_active]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Payment method status updated successfully',
-            'data' => $paymentMethod
-        ]);
     }
 }
