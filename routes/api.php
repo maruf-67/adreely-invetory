@@ -12,7 +12,6 @@ use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\UserBalanceController;
 use App\Http\Controllers\Api\SalesOrderController;
-use App\Http\Controllers\Api\SalesOrderController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
