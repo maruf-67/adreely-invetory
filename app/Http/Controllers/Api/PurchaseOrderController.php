@@ -446,7 +446,7 @@ class PurchaseOrderController extends Controller
             'transaction_date' => 'required|date',
             'details' => 'nullable|string',
             'reference_number' => 'nullable|string',
-            'status' => 'nullable|in:pending,clear,bounced,cancelled',
+            'type' => 'required|in:instant,cheque',
         ]);
 
         if ($validator->fails()) {
@@ -473,7 +473,8 @@ class PurchaseOrderController extends Controller
                 $paymentMethod = PaymentMethod::find($request->payment_method_id);
                 
                 // Determine payment status
-                $paymentStatus = $request->status;
+                $paymentStatus = $request->type === 'instant' ? Payment::STATUS_CLEAR : 
+                    ($request->type === 'cheque' ? Payment::STATUS_PENDING : null);
                 if (!$paymentStatus) {
                     // Auto-determine based on payment method
                     if (in_array($paymentMethod->type, ['cheque', 'check'])) {
