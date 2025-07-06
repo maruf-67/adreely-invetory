@@ -4438,6 +4438,888 @@
 			"description": "Complete purchase order management including creating orders, receiving shipments, managing payments, and order lifecycle"
 		},
 		{
+			"name": "Sales Orders Management",
+			"item": [
+				{
+					"name": "Get All Sales Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/sales-orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"sales-orders"
+							]
+						},
+						"description": "Get all sales orders for the business with optional filtering.\n\n**Query Parameters (Optional):**\n- status: Filter by status (pending, partial, completed, cancelled)\n- customer_id: Filter by customer\n- start_date: Filter from date (YYYY-MM-DD)\n- end_date: Filter to date (YYYY-MM-DD)\n- per_page: Number of items per page (default: 15)"
+					},
+					"response": [
+						{
+							"name": "Successful Get All",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/sales-orders",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"sales-orders"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"current_page\": 1,\n        \"data\": [\n            {\n                \"id\": 1,\n                \"order_number\": \"SO-20250706-0001\",\n                \"invoice_number\": \"INV-20250706-0001\",\n                \"customer_id\": 3,\n                \"order_date\": \"2025-07-06\",\n                \"expected_delivery_date\": \"2025-07-10\",\n                \"status\": \"pending\",\n                \"sub_total\": \"1500.00\",\n                \"discount\": \"50.00\",\n                \"tax_amount\": \"145.00\",\n                \"total_amount\": \"1595.00\",\n                \"paid_amount\": \"500.00\",\n                \"extra_amount\": \"0.00\",\n                \"due_amount\": \"1095.00\",\n                \"notes\": \"Rush order for customer\",\n                \"business_id\": 1,\n                \"created_by\": 1,\n                \"created_at\": \"2025-07-06T10:00:00.000000Z\",\n                \"updated_at\": \"2025-07-06T10:00:00.000000Z\",\n                \"customer\": {\n                    \"id\": 3,\n                    \"name\": \"John Customer\",\n                    \"phone\": \"+1234567890\",\n                    \"email\": \"customer@example.com\",\n                    \"user_type\": \"retailer\"\n                },\n                \"items\": [\n                    {\n                        \"id\": 1,\n                        \"product_id\": 1,\n                        \"quantity_ordered\": 10,\n                        \"quantity_shipped\": 0,\n                        \"unit_price\": \"150.00\",\n                        \"total_price\": \"1500.00\",\n                        \"product\": {\n                            \"id\": 1,\n                            \"name\": \"Sample Product\",\n                            \"sku\": \"SP-001\"\n                        }\n                    }\n                ],\n                \"shipments\": []\n            }\n        ],\n        \"per_page\": 15,\n        \"total\": 1\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Sales Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customer_id\": 3,\n    \"order_date\": \"2025-07-06\",\n    \"expected_delivery_date\": \"2025-07-10\",\n    \"items\": [\n        {\n            \"product_id\": 1,\n            \"quantity_ordered\": 10,\n            \"unit_price\": 150.00,\n            \"notes\": \"High priority item\"\n        },\n        {\n            \"product_id\": 2,\n            \"quantity_ordered\": 5,\n            \"unit_price\": 200.00\n        }\n    ],\n    \"discount\": 50.00,\n    \"notes\": \"Rush order for customer\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sales-orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"sales-orders"
+							]
+						},
+						"description": "Create a new sales order.\n\n**Required Fields:**\n- customer_id: ID of the customer (cannot be admin, staff, or supplier)\n- items[0][product_id]: Product ID for at least one item\n- items[0][quantity_ordered]: Quantity for the item\n- items[0][unit_price]: Unit price for the item\n\n**Optional Fields:**\n- order_date: Order date (defaults to today)\n- expected_delivery_date: Expected delivery date\n- discount: Discount amount\n- notes: Additional notes\n- items[n][product_id]: Additional items\n- items[n][quantity_ordered]: Quantity for additional items\n- items[n][unit_price]: Unit price for additional items\n- items[n][notes]: Notes for specific items\n\n**Note:** Customer must be a valid user excluding admin, staff, and supplier roles."
+					},
+					"response": [
+						{
+							"name": "Successful Creation",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"customer_id\": 3,\n    \"order_date\": \"2025-07-06\",\n    \"expected_delivery_date\": \"2025-07-10\",\n    \"items\": [\n        {\n            \"product_id\": 1,\n            \"quantity_ordered\": 10,\n            \"unit_price\": 150.00,\n            \"notes\": \"High priority item\"\n        }\n    ],\n    \"discount\": 50.00,\n    \"notes\": \"Rush order for customer\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/sales-orders",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"sales-orders"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Sales order created successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"order_number\": \"SO-20250706-0001\",\n        \"customer_id\": 3,\n        \"order_date\": \"2025-07-06\",\n        \"expected_delivery_date\": \"2025-07-10\",\n        \"status\": \"pending\",\n        \"sub_total\": \"1500.00\",\n        \"discount\": \"50.00\",\n        \"total_amount\": \"1450.00\",\n        \"paid_amount\": \"0.00\",\n        \"due_amount\": \"1450.00\",\n        \"notes\": \"Rush order for customer\",\n        \"business_id\": 1,\n        \"created_by\": 1,\n        \"created_at\": \"2025-07-06T10:00:00.000000Z\",\n        \"updated_at\": \"2025-07-06T10:00:00.000000Z\",\n        \"customer\": {\n            \"id\": 3,\n            \"name\": \"John Customer\",\n            \"phone\": \"+1234567890\",\n            \"email\": \"customer@example.com\"\n        },\n        \"items\": [\n            {\n                \"id\": 1,\n                \"product_id\": 1,\n                \"quantity_ordered\": 10,\n                \"unit_price\": \"150.00\",\n                \"total_price\": \"1500.00\",\n                \"notes\": \"High priority item\",\n                \"product\": {\n                    \"id\": 1,\n                    \"name\": \"Sample Product\",\n                    \"sku\": \"SP-001\"\n                }\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Sales Order by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/sales-orders/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"sales-orders",
+								"1"
+							]
+						},
+						"description": "Get a specific sales order by its ID with complete details including items, shipments, and payments."
+					},
+					"response": [
+						{
+							"name": "Successful Get Single",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/sales-orders/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"sales-orders",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": 1,\n        \"order_number\": \"SO-20250706-0001\",\n        \"invoice_number\": \"INV-20250706-0001\",\n        \"customer_id\": 3,\n        \"order_date\": \"2025-07-06\",\n        \"expected_delivery_date\": \"2025-07-10\",\n        \"status\": \"pending\",\n        \"sub_total\": \"1500.00\",\n        \"discount\": \"50.00\",\n        \"tax_amount\": \"145.00\",\n        \"total_amount\": \"1595.00\",\n        \"paid_amount\": \"500.00\",\n        \"extra_amount\": \"0.00\",\n        \"due_amount\": \"1095.00\",\n        \"notes\": \"Rush order for customer\",\n        \"business_id\": 1,\n        \"created_by\": 1,\n        \"created_at\": \"2025-07-06T10:00:00.000000Z\",\n        \"updated_at\": \"2025-07-06T10:00:00.000000Z\",\n        \"customer\": {\n            \"id\": 3,\n            \"name\": \"John Customer\",\n            \"phone\": \"+1234567890\",\n            \"email\": \"customer@example.com\",\n            \"user_type\": \"retailer\",\n            \"current_balance\": \"250.00\"\n        },\n        \"items\": [\n            {\n                \"id\": 1,\n                \"product_id\": 1,\n                \"quantity_ordered\": 10,\n                \"quantity_shipped\": 5,\n                \"quantity_delivered\": 0,\n                \"unit_price\": \"150.00\",\n                \"total_price\": \"1500.00\",\n                \"notes\": \"High priority item\",\n                \"product\": {\n                    \"id\": 1,\n                    \"name\": \"Sample Product\",\n                    \"sku\": \"SP-001\",\n                    \"current_stock\": 45\n                }\n            }\n        ],\n        \"shipments\": [\n            {\n                \"id\": 1,\n                \"shipment_number\": \"SH-20250706-0001\",\n                \"shipped_date\": \"2025-07-06\",\n                \"status\": \"shipped\",\n                \"notes\": \"Partial shipment\",\n                \"items\": [\n                    {\n                        \"id\": 1,\n                        \"quantity_shipped\": 5,\n                        \"product\": {\n                            \"name\": \"Sample Product\",\n                            \"sku\": \"SP-001\"\n                        }\n                    }\n                ]\n            }\n        ],\n        \"payments\": [\n            {\n                \"id\": 1,\n                \"amount\": \"500.00\",\n                \"transaction_date\": \"2025-07-06\",\n                \"status\": \"clear\",\n                \"details\": \"Advance payment\",\n                \"payment_method\": {\n                    \"id\": 1,\n                    \"gateway_name\": \"Bank Transfer\",\n                    \"account_name\": \"Business Account\"\n                }\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Sales Order",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"expected_delivery_date\": \"2025-07-12\",\n    \"notes\": \"Updated delivery date as requested by customer\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sales-orders/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"sales-orders",
+								"1"
+							]
+						},
+						"description": "Update an existing sales order.\n\n**Optional Fields:**\n- expected_delivery_date: Update expected delivery date\n- notes: Update notes\n\n**Note:** Only orders with 'pending' or 'partial' status can be updated. Items are managed separately through update items endpoint."
+					},
+					"response": [
+						{
+							"name": "Successful Update",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"expected_delivery_date\": \"2025-07-12\",\n    \"notes\": \"Updated delivery date as requested by customer\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/sales-orders/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"sales-orders",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Sales order updated successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"order_number\": \"SO-20250706-0001\",\n        \"customer_id\": 3,\n        \"order_date\": \"2025-07-06\",\n        \"expected_delivery_date\": \"2025-07-12\",\n        \"status\": \"pending\",\n        \"total_amount\": \"1595.00\",\n        \"paid_amount\": \"500.00\",\n        \"due_amount\": \"1095.00\",\n        \"notes\": \"Updated delivery date as requested by customer\",\n        \"updated_at\": \"2025-07-06T11:00:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Sales Order Items",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"items\": [\n        {\n            \"id\": 1,\n            \"product_id\": 1,\n            \"quantity_ordered\": 15,\n            \"unit_price\": 140.00,\n            \"notes\": \"Increased quantity and adjusted price\"\n        },\n        {\n            \"product_id\": 3,\n            \"quantity_ordered\": 8,\n            \"unit_price\": 75.00,\n            \"notes\": \"New item added to order\"\n        }\n    ],\n    \"discount\": 100.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sales-orders/1/items",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"sales-orders",
+								"1",
+								"items"
+							]
+						},
+						"description": "Update sales order items for the specified sales order.\n\n**Features:**\n- Update existing items (quantity, unit price, notes)\n- Add new items to the sales order\n- Remove items not included in the request (only if not shipped)\n- Automatically recalculate order totals\n\n**Business Rules:**\n- Only allows updates to orders with 'pending' or 'partial' status\n- Cannot reduce quantity below shipped amount for existing items\n- Cannot delete items with shipped quantities\n- Automatically recalculates order totals based on item changes\n\n**Request Format:**\n- items[n][id]: Optional existing item ID for updates\n- items[n][product_id]: Required product ID\n- items[n][quantity_ordered]: Required quantity\n- items[n][unit_price]: Required unit price\n- items[n][notes]: Optional item notes\n- discount: Optional order discount"
+					},
+					"response": [
+						{
+							"name": "Successful Items Update",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"items\": [\n        {\n            \"id\": 1,\n            \"product_id\": 1,\n            \"quantity_ordered\": 15,\n            \"unit_price\": 140.00,\n            \"notes\": \"Increased quantity and adjusted price\"\n        },\n        {\n            \"product_id\": 3,\n            \"quantity_ordered\": 8,\n            \"unit_price\": 75.00,\n            \"notes\": \"New item added to order\"\n        }\n    ],\n    \"discount\": 100.00\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/sales-orders/1/items",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"sales-orders",
+										"1",
+										"items"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Sales order items updated successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"order_number\": \"SO-20250706-0001\",\n        \"sub_total\": \"2700.00\",\n        \"discount\": \"100.00\",\n        \"tax_amount\": \"260.00\",\n        \"total_amount\": \"2860.00\",\n        \"items\": [\n            {\n                \"id\": 1,\n                \"product_id\": 1,\n                \"quantity_ordered\": 15,\n                \"unit_price\": \"140.00\",\n                \"total_price\": \"2100.00\",\n                \"notes\": \"Increased quantity and adjusted price\",\n                \"product\": {\n                    \"id\": 1,\n                    \"name\": \"Sample Product\",\n                    \"sku\": \"SP-001\"\n                }\n            },\n            {\n                \"id\": 2,\n                \"product_id\": 3,\n                \"quantity_ordered\": 8,\n                \"unit_price\": \"75.00\",\n                \"total_price\": \"600.00\",\n                \"notes\": \"New item added to order\",\n                \"product\": {\n                    \"id\": 3,\n                    \"name\": \"Another Product\",\n                    \"sku\": \"AP-001\"\n                }\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Ship Sales Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"shipped_date\": \"2025-07-06\",\n    \"shipment_number\": \"SH-20250706-0001\",\n    \"items\": [\n        {\n            \"sales_order_item_id\": 1,\n            \"quantity_shipped\": 10,\n            \"notes\": \"Partial shipment - remaining to follow\"\n        }\n    ],\n    \"notes\": \"First shipment of the order\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sales-orders/1/ship",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"sales-orders",
+								"1",
+								"ship"
+							]
+						},
+						"description": "Ship items for a sales order with multiple shipments support.\n\n**Required Fields:**\n- items[0][sales_order_item_id]: Sales order item ID\n- items[0][quantity_shipped]: Quantity to ship\n\n**Optional Fields:**\n- shipped_date: Date of shipment (defaults to today)\n- shipment_number: Custom shipment number\n- notes: Shipment notes\n- items[n][sales_order_item_id]: Additional items\n- items[n][quantity_shipped]: Additional quantities\n- items[n][notes]: Notes for specific items\n\n**Note:** This will automatically reduce product inventory and update order status."
+					},
+					"response": [
+						{
+							"name": "Successful Shipment",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"shipped_date\": \"2025-07-06\",\n    \"items\": [\n        {\n            \"sales_order_item_id\": 1,\n            \"quantity_shipped\": 10\n        }\n    ],\n    \"notes\": \"First shipment of the order\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/sales-orders/1/ship",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"sales-orders",
+										"1",
+										"ship"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Shipment created successfully\",\n    \"data\": {\n        \"shipment\": {\n            \"id\": 1,\n            \"shipment_number\": \"SH-20250706-0001\",\n            \"shipped_date\": \"2025-07-06\",\n            \"status\": \"shipped\",\n            \"notes\": \"First shipment of the order\",\n            \"items\": [\n                {\n                    \"id\": 1,\n                    \"quantity_shipped\": 10,\n                    \"product\": {\n                        \"name\": \"Sample Product\",\n                        \"sku\": \"SP-001\"\n                    }\n                }\n            ]\n        },\n        \"sales_order\": {\n            \"id\": 1,\n            \"status\": \"partial\",\n            \"updated_at\": \"2025-07-06T12:00:00.000000Z\"\n        },\n        \"inventory_updates\": [\n            {\n                \"product_id\": 1,\n                \"previous_quantity\": 50,\n                \"new_quantity\": 40,\n                \"change\": -10\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Sales Order Shipments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/sales-orders/1/shipments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"sales-orders",
+								"1",
+								"shipments"
+							]
+						},
+						"description": "Get all shipments for a specific sales order."
+					},
+					"response": [
+						{
+							"name": "Successful Get Shipments",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/sales-orders/1/shipments",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"sales-orders",
+										"1",
+										"shipments"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"shipment_number\": \"SH-20250706-0001\",\n            \"shipped_date\": \"2025-07-06\",\n            \"status\": \"shipped\",\n            \"notes\": \"First shipment of the order\",\n            \"created_at\": \"2025-07-06T12:00:00.000000Z\",\n            \"items\": [\n                {\n                    \"id\": 1,\n                    \"quantity_shipped\": 10,\n                    \"notes\": \"Partial shipment - remaining to follow\",\n                    \"product\": {\n                        \"id\": 1,\n                        \"name\": \"Sample Product\",\n                        \"sku\": \"SP-001\"\n                    },\n                    \"sales_order_item\": {\n                        \"id\": 1,\n                        \"quantity_ordered\": 15,\n                        \"quantity_shipped\": 10,\n                        \"remaining_quantity\": 5\n                    }\n                }\n            ]\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Add Payment to Sales Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"instant\",\n    \"payment_method_id\": 1,\n    \"amount\": 500.00,\n    \"transaction_date\": \"2025-07-06\",\n    \"details\": \"Customer advance payment\",\n    \"reference_number\": \"TXN-123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sales-orders/1/payments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"sales-orders",
+								"1",
+								"payments"
+							]
+						},
+						"description": "Add a payment for a sales order from the customer.\n\n**Required Fields:**\n- type: Payment type (instant or cheque)\n- payment_method_id: Payment method ID\n- amount: Payment amount\n- transaction_date: Payment date\n\n**For Cheque Payments (type=cheque):**\n- cheque_number: Cheque number\n- bank_name: Bank name\n- cheque_date: Cheque date\n\n**Optional Fields:**\n- details: Payment details\n- reference_number: Payment reference\n\n**Note:** Payments from customers increase business revenue. Overpayments create customer credit balance."
+					},
+					"response": [
+						{
+							"name": "Successful Payment Addition",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"type\": \"instant\",\n    \"payment_method_id\": 1,\n    \"amount\": 500.00,\n    \"transaction_date\": \"2025-07-06\",\n    \"details\": \"Customer advance payment\",\n    \"reference_number\": \"TXN-123456\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/sales-orders/1/payments",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"sales-orders",
+										"1",
+										"payments"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Payment added and cleared successfully\",\n    \"data\": {\n        \"payment\": {\n            \"id\": 1,\n            \"amount\": \"500.00\",\n            \"transaction_date\": \"2025-07-06\",\n            \"status\": \"clear\",\n            \"details\": \"Customer advance payment\",\n            \"reference_number\": \"TXN-123456\",\n            \"created_at\": \"2025-07-06T13:00:00.000000Z\",\n            \"payment_method\": {\n                \"id\": 1,\n                \"gateway_name\": \"Bank Transfer\",\n                \"account_name\": \"Business Account\"\n            }\n        },\n        \"sales_order\": {\n            \"id\": 1,\n            \"paid_amount\": \"500.00\",\n            \"due_amount\": \"1095.00\",\n            \"status\": \"pending\",\n            \"updated_at\": \"2025-07-06T13:00:00.000000Z\"\n        },\n        \"overpayment_info\": null\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Payment Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"clear\",\n    \"reason\": \"Cheque cleared successfully\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sales-orders/1/payments/2/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"sales-orders",
+								"1",
+								"payments",
+								"2",
+								"status"
+							]
+						},
+						"description": "Update the status of a payment for a sales order.\n\n**Required Field:**\n- status: Payment status (pending, clear, hold, rejected)\n\n**Optional Field:**\n- reason: Reason for status change\n\n**Note:** Status changes affect customer balance. Clearing payments increases business revenue, rejecting payments may affect customer credit."
+					},
+					"response": [
+						{
+							"name": "Successful Status Update",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"status\": \"clear\",\n    \"reason\": \"Cheque cleared successfully\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/sales-orders/1/payments/2/status",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"sales-orders",
+										"1",
+										"payments",
+										"2",
+										"status"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Payment status updated to clear\",\n    \"data\": {\n        \"payment\": {\n            \"id\": 2,\n            \"status\": \"clear\",\n            \"status_reason\": \"Cheque cleared successfully\",\n            \"status_updated_at\": \"2025-07-06T14:00:00.000000Z\"\n        },\n        \"sales_order\": {\n            \"id\": 1,\n            \"paid_amount\": \"1200.00\",\n            \"due_amount\": \"395.00\",\n            \"status\": \"pending\"\n        },\n        \"balance_effect\": {\n            \"overpayment_amount\": 0,\n            \"balance_effect\": \"no_balance_change\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Cancel Sales Order",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cancellation_reason\": \"Customer requested cancellation\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sales-orders/1/cancel",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"sales-orders",
+								"1",
+								"cancel"
+							]
+						},
+						"description": "Cancel a sales order.\n\n**Optional Field:**\n- cancellation_reason: Reason for cancellation\n\n**Note:** Cannot cancel completed sales orders. Cancellation may affect inventory and customer balances if shipments or payments exist."
+					},
+					"response": [
+						{
+							"name": "Successful Cancellation",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"cancellation_reason\": \"Customer requested cancellation\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/sales-orders/1/cancel",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"sales-orders",
+										"1",
+										"cancel"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Sales order cancelled successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"order_number\": \"SO-20250706-0001\",\n        \"status\": \"cancelled\",\n        \"cancellation_reason\": \"Customer requested cancellation\",\n        \"cancelled_at\": \"2025-07-06T15:00:00.000000Z\",\n        \"cancelled_by\": 1\n    }\n}"
+						}
+					]
+				}
+			],
+			"description": "Complete sales order management including creating orders, shipping items, managing payments from customers, and order lifecycle. Sales orders handle revenue from customers (excluding admin, staff, and suppliers) with proper balance management."
+		},
+		{
 			"name": "User Balance Management",
 			"item": [
 				{

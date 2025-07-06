@@ -20,7 +20,7 @@ return new class extends Migration
             $table->date('order_date');
             $table->date('expected_delivery_date')->nullable();
             $table->date('delivered_date')->nullable();
-            $table->enum('status', ['draft', 'confirmed', 'shipped', 'delivered', 'completed', 'cancelled'])->default('draft');
+            $table->enum('status', ['pending', 'partial', 'completed', 'cancelled'])->default('pending');
             $table->decimal('sub_total', 15, 2);
             $table->decimal('discount', 15, 2)->default(0);
             $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
@@ -28,6 +28,7 @@ return new class extends Migration
             $table->decimal('tax_amount', 15, 2)->default(0);
             $table->decimal('total_amount', 15, 2);
             $table->decimal('paid_amount', 15, 2)->default(0);
+            $table->decimal('extra_amount', 15, 2)->default(0);
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
