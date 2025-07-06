@@ -234,6 +234,7 @@ class PurchaseOrderController extends Controller
         $validator = Validator::make($request->all(), [
             'expected_delivery_date' => 'nullable|date',
             'notes' => 'nullable|string',
+            'status' => 'null|in'
         ]);
 
         if ($validator->fails()) {
@@ -248,6 +249,7 @@ class PurchaseOrderController extends Controller
             $purchaseOrder->update([
                 'expected_delivery_date' => $request->expected_delivery_date,
                 'notes' => $request->notes,
+
                 'updated_by' => $user->id,
             ]);
 

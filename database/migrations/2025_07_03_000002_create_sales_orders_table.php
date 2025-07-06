@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('business_id')->constrained()->onDelete('cascade');
             $table->foreignId('customer_id')->constrained('users')->onDelete('cascade');
-            $table->string('order_number')->unique();
+            $table->string('order_number')->nullable()->unique();
             $table->string('invoice_number')->nullable()->unique();
             $table->date('order_date');
             $table->date('expected_delivery_date')->nullable();
