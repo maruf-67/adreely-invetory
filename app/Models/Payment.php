@@ -27,11 +27,14 @@ class Payment extends Model
     protected $casts = [
         'amount' => 'decimal:2',
         'transaction_date' => 'date',
+        'status_updated_at' => 'datetime',
     ];
 
     // Payment status constants
     const STATUS_PENDING = 'pending';
     const STATUS_CLEAR = 'clear';
+    const STATUS_HOLD = 'hold';
+    const STATUS_REJECTED = 'rejected';
     const STATUS_BOUNCED = 'bounced';
     const STATUS_CANCELLED = 'cancelled';
 
@@ -43,6 +46,8 @@ class Payment extends Model
         return [
             self::STATUS_PENDING => 'Pending',
             self::STATUS_CLEAR => 'Clear',
+            self::STATUS_HOLD => 'Hold',
+            self::STATUS_REJECTED => 'Rejected',
             self::STATUS_BOUNCED => 'Bounced',
             self::STATUS_CANCELLED => 'Cancelled',
         ];

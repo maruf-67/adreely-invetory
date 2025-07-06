@@ -11,6 +11,8 @@ use App\Models\SalesOrderItem;
 use App\Models\SalesShipment;
 use App\Models\SalesShipmentItem;
 use App\Models\User;
+use App\Models\PaymentMethod;
+use App\Models\UserBalance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -109,10 +111,10 @@ class SalesOrderController extends Controller
             return DB::transaction(function () use ($request) {
                 $user = Auth::user();
 
-                // Verify customer belongs to the same business and has customer role
+                // Verify customer belongs to the same business and has valid customer role (excludes admin, staff, supplier)
                 $customer = User::where('id', $request->customer_id)
                     ->where('business_id', $user->business_id)
-                    ->whereIn('user_type', ['customer', 'retailer', 'dealer', 'wholesaler'])
+                    ->whereNotIn('user_type', ['admin', 'staff', 'supplier'])
                     ->first();
 
                 if (!$customer) {
@@ -143,13 +145,13 @@ class SalesOrderController extends Controller
                 $taxAmount = ($afterDiscount * $taxRate) / 100;
                 $totalAmount = $afterDiscount + $taxAmount;
 
-                // Create sales order
+                // Create sales order with 'pending' status instead of 'draft'
                 $salesOrder = SalesOrder::create([
                     'business_id' => $user->business_id,
                     'customer_id' => $request->customer_id,
                     'order_date' => $request->order_date,
                     'expected_delivery_date' => $request->expected_delivery_date,
-                    'status' => 'draft',
+                    'status' => 'pending',
                     'sub_total' => $subTotal,
                     'discount' => $discountAmount,
                     'discount_type' => $discountType,
@@ -251,10 +253,10 @@ class SalesOrderController extends Controller
             ], 404);
         }
 
-        if (!in_array($salesOrder->status, ['draft', 'confirmed'])) {
+        if (!in_array($salesOrder->status, ['pending', 'partial'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot update sales order that is not draft or confirmed'
+                'message' => 'Cannot update sales order that is not pending or partial'
             ], 400);
         }
 
@@ -543,6 +545,16 @@ class SalesOrderController extends Controller
     /**
      * Add payment to sales order.
      *
+     * Features:
+     * - Supports instant and cheque payments
+     * - Updates customer balance appropriately
+     * - Handles payment status and order updates
+     * - Manages overpayment scenarios
+     *
+     * Security considerations:
+     * - Only authenticated users can add payments to their business sales orders
+     * - Input validation prevents malicious data injection
+     *
      * @param Request $request The request containing payment data
      * @param int $id The sales order ID
      * @return \Illuminate\Http\JsonResponse Payment data or error message
@@ -550,11 +562,15 @@ class SalesOrderController extends Controller
     public function addPayment(Request $request, $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
+            'type' => 'required|in:instant,cheque',
             'payment_method_id' => 'required|exists:payment_methods,id',
             'amount' => 'required|numeric|min:0',
             'transaction_date' => 'required|date',
             'details' => 'nullable|string',
             'reference_number' => 'nullable|string',
+            'cheque_number' => 'required_if:type,cheque|string',
+            'bank_name' => 'required_if:type,cheque|string',
+            'cheque_date' => 'required_if:type,cheque|date',
         ]);
 
         if ($validator->fails()) {
@@ -566,56 +582,186 @@ class SalesOrderController extends Controller
         }
 
         try {
-            $user = Auth::user();
-            $salesOrder = SalesOrder::where('business_id', $user->business_id)->find($id);
+            return DB::transaction(function () use ($request, $id) {
+                $user = Auth::user();
+                $salesOrder = SalesOrder::where('business_id', $user->business_id)->find($id);
 
-            if (!$salesOrder) {
+                if (!$salesOrder) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Sales order not found'
+                    ], 404);
+                }
+
+                // Verify payment method belongs to the business
+                $paymentMethod = PaymentMethod::where('id', $request->payment_method_id)
+                    ->where('business_id', $user->business_id)
+                    ->first();
+
+                if (!$paymentMethod) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid payment method'
+                    ], 400);
+                }
+
+                // Determine payment status based on type
+                $status = $request->type === 'instant' ? 'clear' : 'pending';
+
+                // Prepare payment details
+                $paymentDetails = $request->details;
+                if ($request->type === 'cheque') {
+                    $chequeDetails = "Cheque No: {$request->cheque_number}, Bank: {$request->bank_name}, Date: {$request->cheque_date}";
+                    $paymentDetails = $paymentDetails ? $paymentDetails . " | " . $chequeDetails : $chequeDetails;
+                }
+
+                $payment = Payment::create([
+                    'business_id' => $user->business_id,
+                    'paymentable_type' => SalesOrder::class,
+                    'paymentable_id' => $salesOrder->id,
+                    'payment_method_id' => $request->payment_method_id,
+                    'amount' => $request->amount,
+                    'transaction_date' => $request->transaction_date,
+                    'details' => $paymentDetails,
+                    'reference_number' => $request->reference_number,
+                    'status' => $status,
+                    'created_by' => $user->id,
+                ]);
+
+                // Handle payment effects based on status
+                if ($status === 'clear') {
+                    $overpaymentInfo = $this->handleClearedPaymentEffect($salesOrder, $payment);
+                    $responseMessage = 'Payment added and cleared successfully';
+                    if ($overpaymentInfo['overpayment_amount'] > 0) {
+                        $responseMessage .= ". Overpayment of " . number_format($overpaymentInfo['overpayment_amount'], 2) . " added to customer balance.";
+                    }
+                } else {
+                    $responseMessage = 'Payment added successfully (pending cheque clearance)';
+                }
+
+                // Update sales order status
+                $salesOrder->updateStatus();
+
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Sales order not found'
-                ], 404);
-            }
-
-            // Check if payment amount doesn't exceed due amount
-            $dueAmount = $salesOrder->total_amount - $salesOrder->paid_amount;
-            if ($request->amount > $dueAmount) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payment amount exceeds due amount'
-                ], 400);
-            }
-
-            $payment = Payment::create([
-                'business_id' => $user->business_id,
-                'paymentable_type' => SalesOrder::class,
-                'paymentable_id' => $salesOrder->id,
-                'payment_method_id' => $request->payment_method_id,
-                'amount' => $request->amount,
-                'transaction_date' => $request->transaction_date,
-                'details' => $request->details,
-                'reference_number' => $request->reference_number,
-                'status' => 'clear',
-                'created_by' => $user->id,
-            ]);
-
-            // Update sales order paid amount
-            $salesOrder->updatePaidAmount();
-
-            // Update status if fully paid
-            $salesOrder->updateStatus();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment added successfully',
-                'data' => [
-                    'payment' => $payment->load('paymentMethod'),
-                    'sales_order' => $salesOrder->fresh()
-                ]
-            ]);
+                    'success' => true,
+                    'message' => $responseMessage,
+                    'data' => [
+                        'payment' => $payment->load('paymentMethod'),
+                        'sales_order' => $salesOrder->fresh(),
+                        'overpayment_info' => $overpaymentInfo ?? null
+                    ]
+                ]);
+            });
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to add payment',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update payment status for a sales order payment.
+     *
+     * Features:
+     * - Updates payment status (pending/clear/hold/rejected)
+     * - Manages customer balance effects when status changes
+     * - Updates sales order totals and status
+     * - Handles overpayment scenarios appropriately
+     *
+     * Security considerations:
+     * - Only authenticated users can update their business payment statuses
+     * - Input validation prevents malicious data injection
+     *
+     * @param Request $request The request containing status update data
+     * @param int $id The sales order ID
+     * @param int $paymentId The payment ID
+     * @return \Illuminate\Http\JsonResponse Updated payment data or error message
+     */
+    public function updatePaymentStatus(Request $request, $id, $paymentId): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:pending,clear,hold,rejected',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            return DB::transaction(function () use ($request, $id, $paymentId) {
+                $user = Auth::user();
+                $salesOrder = SalesOrder::where('business_id', $user->business_id)->find($id);
+
+                if (!$salesOrder) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Sales order not found'
+                    ], 404);
+                }
+
+                $payment = Payment::where('id', $paymentId)
+                    ->where('paymentable_type', SalesOrder::class)
+                    ->where('paymentable_id', $salesOrder->id)
+                    ->where('business_id', $user->business_id)
+                    ->first();
+
+                if (!$payment) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Payment not found'
+                    ], 404);
+                }
+
+                $oldStatus = $payment->status;
+                $newStatus = $request->status;
+
+                // Update payment status
+                $payment->update([
+                    'status' => $newStatus,
+                ]);
+
+                $responseMessage = "Payment status updated to {$newStatus}";
+                $balanceEffect = null;
+
+                // Handle balance effects based on status change
+                if ($oldStatus !== 'clear' && $newStatus === 'clear') {
+                    // Payment became cleared
+                    $balanceEffect = $this->handleClearedPaymentEffect($salesOrder, $payment);
+                    if ($balanceEffect['overpayment_amount'] > 0) {
+                        $responseMessage .= ". Overpayment of " . number_format($balanceEffect['overpayment_amount'], 2) . " added to customer balance.";
+                    }
+                } elseif ($oldStatus === 'clear' && $newStatus !== 'clear') {
+                    // Payment is no longer cleared
+                    $balanceEffect = $this->handlePaymentReversalEffect($salesOrder, $payment);
+                    if ($balanceEffect['balance_adjustment'] > 0) {
+                        $responseMessage .= ". Customer balance adjusted by " . number_format($balanceEffect['balance_adjustment'], 2) . " due to payment reversal.";
+                    }
+                }
+
+                // Update sales order status
+                $salesOrder->updateStatus();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => $responseMessage,
+                    'data' => [
+                        'payment' => $payment->fresh(),
+                        'sales_order' => $salesOrder->fresh(),
+                        'balance_effect' => $balanceEffect
+                    ]
+                ]);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update payment status',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -902,5 +1048,124 @@ class SalesOrderController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Handle cleared payment effects on sales order balance and customer balance.
+     * This function is called whenever a payment becomes cleared (either new payment or status update).
+     * For sales orders, payments come FROM customers TO the business.
+     * 
+     * @param SalesOrder $salesOrder The sales order
+     * @param Payment $payment The payment that was cleared
+     * @return array Returns overpayment information
+     */
+    private function handleClearedPaymentEffect(SalesOrder $salesOrder, Payment $payment): array
+    {
+        // Recalculate sales order paid amount (only cleared payments)
+        $salesOrder->updatePaidAmount();
+        
+        // Calculate current totals
+        $clearedPayments = $salesOrder->payments()->where('status', 'clear')->sum('amount');
+        $totalAmount = $salesOrder->total_amount;
+        $overpaymentAmount = max(0, $clearedPayments - $totalAmount);
+        
+        // Update sales order extra_amount field (if it exists in the model)
+        if (in_array('extra_amount', $salesOrder->getFillable())) {
+            $salesOrder->update(['extra_amount' => $overpaymentAmount]);
+        }
+        
+        // Handle customer balance for overpayment
+        // In sales, overpayment creates a CREDIT for the customer (business owes them)
+        if ($overpaymentAmount > 0) {
+            UserBalance::updateOrCreate(
+                [
+                    'business_id' => $salesOrder->business_id,
+                    'user_id' => $salesOrder->customer_id,
+                ],
+                []
+            )->increment('current_balance', $overpaymentAmount);
+
+            // Log the balance change
+            UserBalance::logBalanceChange(
+                $salesOrder->business_id,
+                $salesOrder->customer_id,
+                $overpaymentAmount,
+                'credit_adjustment',
+                "Overpayment from sales order #{$salesOrder->order_number}",
+                $salesOrder->id,
+                SalesOrder::class
+            );
+        }
+        
+        return [
+            'overpayment_amount' => $overpaymentAmount,
+            'total_cleared_payments' => $clearedPayments,
+            'order_total' => $totalAmount,
+            'balance_effect' => $overpaymentAmount > 0 ? 'customer_credit_increased' : 'no_balance_change'
+        ];
+    }
+
+    /**
+     * Handle payment reversal effects when payment status changes from clear to non-clear.
+     * This function reverses balance effects when a payment is no longer cleared.
+     * For sales orders, this reduces customer credit when payment is reversed.
+     * 
+     * @param SalesOrder $salesOrder The sales order
+     * @param Payment $payment The payment that is no longer cleared
+     * @return array Returns reversal information
+     */
+    private function handlePaymentReversalEffect(SalesOrder $salesOrder, Payment $payment): array
+    {
+        // Calculate what overpayment was before including this payment
+        $clearedPaymentsWithThisPayment = $salesOrder->payments()
+            ->where('status', 'clear')
+            ->orWhere('id', $payment->id)
+            ->sum('amount');
+            
+        $clearedPaymentsWithoutThisPayment = $salesOrder->payments()
+            ->where('status', 'clear')
+            ->where('id', '!=', $payment->id)
+            ->sum('amount');
+        
+        $totalAmount = $salesOrder->total_amount;
+        $previousOverpay = max(0, $clearedPaymentsWithThisPayment - $totalAmount);
+        $newOverpay = max(0, $clearedPaymentsWithoutThisPayment - $totalAmount);
+        $overpayReduction = $previousOverpay - $newOverpay;
+        
+        // Update sales order paid amount and extra amount
+        $salesOrder->updatePaidAmount();
+        if (in_array('extra_amount', $salesOrder->getFillable())) {
+            $salesOrder->update(['extra_amount' => $newOverpay]);
+        }
+        
+        // Handle customer balance reversal
+        // In sales, reducing overpayment reduces customer credit (business owes them less)
+        if ($overpayReduction > 0) {
+            UserBalance::updateOrCreate(
+                [
+                    'business_id' => $salesOrder->business_id,
+                    'user_id' => $salesOrder->customer_id,
+                ],
+                []
+            )->decrement('current_balance', $overpayReduction);
+
+            // Log the balance change
+            UserBalance::logBalanceChange(
+                $salesOrder->business_id,
+                $salesOrder->customer_id,
+                -$overpayReduction,
+                'debit_adjustment',
+                "Payment reversal from sales order #{$salesOrder->order_number}",
+                $salesOrder->id,
+                SalesOrder::class
+            );
+        }
+        
+        return [
+            'overpay_reduction' => $overpayReduction,
+            'new_overpay_amount' => $newOverpay,
+            'balance_adjustment' => $overpayReduction,
+            'balance_effect' => $overpayReduction > 0 ? 'customer_credit_decreased' : 'no_balance_change'
+        ];
     }
 }

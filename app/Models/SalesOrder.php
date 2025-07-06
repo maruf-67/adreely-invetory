@@ -29,6 +29,7 @@ class SalesOrder extends Model
         'tax_amount',
         'total_amount',
         'paid_amount',
+        'extra_amount',
         'notes',
     ];
 
@@ -42,6 +43,7 @@ class SalesOrder extends Model
         'tax_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'extra_amount' => 'decimal:2',
     ];
 
     protected $appends = ['due_amount'];
@@ -141,7 +143,7 @@ class SalesOrder extends Model
     }
 
     /**
-     * Update paid amount from payments.
+     * Update paid amount from cleared payments only.
      */
     public function updatePaidAmount(): void
     {

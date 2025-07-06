@@ -149,6 +149,7 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Payment management
         Route::post('/{id}/payments', [SalesOrderController::class, 'addPayment']);
+        Route::put('/{id}/payments/{paymentId}/status', [SalesOrderController::class, 'updatePaymentStatus']);
         
         Route::put('/{id}/cancel', [SalesOrderController::class, 'cancel']);
     });
