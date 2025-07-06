@@ -126,6 +126,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Payment management
     Route::prefix('payments')->group(function () {
         Route::get('/', [PaymentController::class, 'index']);
+        Route::get('/purchase-orders/{id?}', [PaymentController::class, 'getPurchaseOrderPayments']);
         Route::get('/summary', [PaymentController::class, 'getSummary']);
         Route::get('/pending', [PaymentController::class, 'getPendingPayments']);
         Route::put('/{id}/status', [PaymentController::class, 'updateStatus']);

@@ -58,6 +58,31 @@ class PaymentController extends Controller
     }
 
     /**
+     * Get payments related to a specific purchase order.
+     */
+    public function getPurchaseOrderPayments(Request $request, $id = null)
+    {
+        $user = Auth::user();
+
+        $query = Payment::where('business_id', $user->business_id);
+
+        if ($id) {
+            $query->where('paymentable_id', $id)
+                  ->where('paymentable_type', 'App\\Models\\PurchaseOrder');
+        }
+
+        $payments = $query->with(['paymentMethod', 'paymentable'])
+                           ->orderBy('transaction_date', 'desc')
+                           ->paginate($request->get('per_page', 15));
+
+        return response()->json([
+            'success' => true,
+            'data' => $payments
+        ]);
+    }
+
+
+    /**
      * Get payment summary by status.
      */
     public function getSummary(Request $request): JsonResponse
