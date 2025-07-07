@@ -166,7 +166,7 @@ class SalesOrder extends Model
             $status = 'delivered';
         } elseif ($totalShipped > 0) {
             $status = 'shipped';
-        } elseif ($this->status === 'draft') {
+        } elseif ($this->status == 'draft') {
             $status = 'draft';
         } else {
             $status = 'confirmed';

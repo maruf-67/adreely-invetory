@@ -28,7 +28,7 @@ class BusinessController extends Controller
     {
         $user = Auth::user();
         
-        if ($user->user_type === 'admin') {
+        if ($user->user_type == 'admin') {
             $businesses = $user->ownedBusinesses()->with('owner')->get();
         } else {
             $businesses = collect([$user->business])->filter();

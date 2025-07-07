@@ -104,7 +104,7 @@ class PurchaseOrder extends Model
         $totalOrdered = $this->items->sum('quantity_ordered');
         $totalReceived = $this->items->sum('quantity_received');
 
-        if ($totalReceived === 0) {
+        if ($totalReceived == 0) {
             $status = 'pending';
         } elseif ($totalReceived >= $totalOrdered) {
             $status = 'completed';

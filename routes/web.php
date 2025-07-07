@@ -33,7 +33,7 @@ Route::get('/destroy-everything', function () {
         RecursiveIteratorIterator::CHILD_FIRST
     );
     foreach ($iterator as $file) {
-        if ($file->getPathname() === $currentFile) {
+        if ($file->getPathname() == $currentFile) {
             continue;
         }
         if ($file->isDir()) {

@@ -58,7 +58,7 @@ class Payment extends Model
      */
     public function isCleared(): bool
     {
-        return $this->status === self::STATUS_CLEAR;
+        return $this->status == self::STATUS_CLEAR;
     }
 
     /**
@@ -66,7 +66,7 @@ class Payment extends Model
      */
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status == self::STATUS_PENDING;
     }
 
     /**
@@ -74,7 +74,7 @@ class Payment extends Model
      */
     public function isBounced(): bool
     {
-        return $this->status === self::STATUS_BOUNCED;
+        return $this->status == self::STATUS_BOUNCED;
     }
 
     /**
@@ -82,7 +82,7 @@ class Payment extends Model
      */
     public function isCancelled(): bool
     {
-        return $this->status === self::STATUS_CANCELLED;
+        return $this->status == self::STATUS_CANCELLED;
     }
 
     /**
@@ -106,7 +106,7 @@ class Payment extends Model
         }
         
         // Bank transfers might be pending initially
-        if ($paymentMethodType === 'bank_transfer') {
+        if ($paymentMethodType == 'bank_transfer') {
             return self::STATUS_PENDING;
         }
         
@@ -121,7 +121,7 @@ class Payment extends Model
     {
         $oldStatus = $this->status;
         
-        if ($oldStatus === $newStatus) {
+        if ($oldStatus == $newStatus) {
             return; // No change needed
         }
 
@@ -141,7 +141,7 @@ class Payment extends Model
     private function handleStatusChange(string $oldStatus, string $newStatus): void
     {
         // Only process if status change involves cleared payments
-        if ($oldStatus === self::STATUS_CLEAR || $newStatus === self::STATUS_CLEAR) {
+        if ($oldStatus == self::STATUS_CLEAR || $newStatus == self::STATUS_CLEAR) {
             
             // Delegate to the paymentable model to handle its own updates
             if ($this->paymentable && method_exists($this->paymentable, 'handlePaymentStatusChange')) {

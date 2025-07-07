@@ -134,7 +134,7 @@ class SalesOrderController extends Controller
                 $discountType = $request->get('discount_type', 'fixed');
                 
                 // Calculate discount amount
-                if ($discountType === 'percentage') {
+                if ($discountType == 'percentage') {
                     $discountAmount = ($subTotal * $discount) / 100;
                 } else {
                     $discountAmount = $discount;
@@ -607,11 +607,11 @@ class SalesOrderController extends Controller
                 }
 
                 // Determine payment status based on type
-                $status = $request->type === 'instant' ? 'clear' : 'pending';
+                $status = $request->type == 'instant' ? 'clear' : 'pending';
 
                 // Prepare payment details
                 $paymentDetails = $request->details;
-                if ($request->type === 'cheque') {
+                if ($request->type == 'cheque') {
                     $chequeDetails = "Cheque No: {$request->cheque_number}, Bank: {$request->bank_name}, Date: {$request->cheque_date}";
                     $paymentDetails = $paymentDetails ? $paymentDetails . " | " . $chequeDetails : $chequeDetails;
                 }
@@ -630,7 +630,7 @@ class SalesOrderController extends Controller
                 ]);
 
                 // Handle payment effects based on status
-                if ($status === 'clear') {
+                if ($status == 'clear') {
                     $overpaymentInfo = $this->handleClearedPaymentEffect($salesOrder, $payment);
                     $responseMessage = 'Payment added and cleared successfully';
                     if ($overpaymentInfo['overpayment_amount'] > 0) {
@@ -732,13 +732,13 @@ class SalesOrderController extends Controller
                 $balanceEffect = null;
 
                 // Handle balance effects based on status change
-                if ($oldStatus != 'clear' && $newStatus === 'clear') {
+                if ($oldStatus != 'clear' && $newStatus == 'clear') {
                     // Payment became cleared
                     $balanceEffect = $this->handleClearedPaymentEffect($salesOrder, $payment);
                     if ($balanceEffect['overpayment_amount'] > 0) {
                         $responseMessage .= ". Overpayment of " . number_format($balanceEffect['overpayment_amount'], 2) . " added to customer balance.";
                     }
-                } elseif ($oldStatus === 'clear' && $newStatus != 'clear') {
+                } elseif ($oldStatus == 'clear' && $newStatus != 'clear') {
                     // Payment is no longer cleared
                     $balanceEffect = $this->handlePaymentReversalEffect($salesOrder, $payment);
                     if ($balanceEffect['balance_adjustment'] > 0) {
@@ -786,7 +786,7 @@ class SalesOrderController extends Controller
             ], 404);
         }
 
-        if ($salesOrder->status === 'completed') {
+        if ($salesOrder->status == 'completed') {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot cancel completed sales order'
@@ -1013,7 +1013,7 @@ class SalesOrderController extends Controller
                 $taxRate = $request->get('tax_rate', $salesOrder->tax_rate);
 
                 // Calculate discount amount
-                if ($discountType === 'percentage') {
+                if ($discountType == 'percentage') {
                     $discountAmount = ($subTotal * $discount) / 100;
                 } else {
                     $discountAmount = $discount;

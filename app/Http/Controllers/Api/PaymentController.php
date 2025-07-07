@@ -167,7 +167,7 @@ class PaymentController extends Controller
                 $oldStatus = $payment->status;
                 $newStatus = $request->status;
 
-                if ($oldStatus === $newStatus) {
+                if ($oldStatus == $newStatus) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Payment is already in the requested status'

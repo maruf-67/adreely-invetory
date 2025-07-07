@@ -72,7 +72,7 @@ class UserBalance extends Model
         $user = User::find($userId);
         $previousBalance = $user->current_balance;
         
-        $newBalance = $balanceType === 'credit' 
+        $newBalance = $balanceType == 'credit' 
             ? $previousBalance + $amount 
             : $previousBalance - $amount;
 

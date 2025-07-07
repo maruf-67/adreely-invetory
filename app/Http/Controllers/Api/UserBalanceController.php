@@ -183,8 +183,8 @@ class UserBalanceController extends Controller
         });
 
         // Separate suppliers and customers with balances
-        $suppliers = $balanceSummary->filter(fn($item) => $item['user']['user_type'] === 'supplier');
-        $customers = $balanceSummary->filter(fn($item) => $item['user']['user_type'] === 'customer');
+        $suppliers = $balanceSummary->filter(fn($item) => $item['user']['user_type'] == 'supplier');
+        $customers = $balanceSummary->filter(fn($item) => $item['user']['user_type'] == 'customer');
 
         // Calculate totals
         $totalSupplierCredit = $suppliers->where('balance.status', 'credit')->sum('balance.absolute_amount');
@@ -225,15 +225,29 @@ class UserBalanceController extends Controller
 
         $query = null;
 
-        if ($user->user_type === 'supplier') {
+        if ($user->user_type == 'supplier') {
             // Get payments for purchase orders where this user is the supplier
-            $query = $user->supplierPayments()->with(['paymentMethod', 'paymentable']);
-        } elseif ($user->user_type === 'customer') {
-            // For customers, we'll need to implement this when sales orders are created
-            return response()->json([
-                'success' => false,
-                'message' => 'Customer payment history not implemented yet'
-            ], 501);
+            // Get directly from the Payment model with proper relation checks
+            $query = $user->supplierPayments();
+            
+            // Add eager loading of related models
+            if ($query) {
+                $query->with(['paymentMethod', 'paymentable']);
+            }
+        } elseif ($user->user_type == 'customer') {
+            // Get payments for sales orders where this user is the customer
+            $query = $user->customerPayments();
+            
+            // Add eager loading of related models
+            if ($query) {
+                $query->with(['paymentMethod', 'paymentable']);
+            } else {
+                // For customers, if relation not yet implemented
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Customer payment history not implemented yet'
+                ], 501);
+            }
         }
 
         if (!$query) {

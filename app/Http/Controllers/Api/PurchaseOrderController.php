@@ -475,13 +475,13 @@ class PurchaseOrderController extends Controller
                 $paymentMethod = PaymentMethod::find($request->payment_method_id);
                 
                 // Determine payment status
-                $paymentStatus = $request->type === 'instant' ? Payment::STATUS_CLEAR : 
-                    ($request->type === 'cheque' ? Payment::STATUS_PENDING : null);
+                $paymentStatus = $request->type == 'instant' ? Payment::STATUS_CLEAR : 
+                    ($request->type == 'cheque' ? Payment::STATUS_PENDING : null);
                 if (!$paymentStatus) {
                     // Auto-determine based on payment method
                     if (in_array($paymentMethod->type, ['cheque', 'check'])) {
                         $paymentStatus = Payment::STATUS_PENDING;
-                    } elseif ($paymentMethod->type === 'bank_transfer') {
+                    } elseif ($paymentMethod->type == 'bank_transfer') {
                         $paymentStatus = Payment::STATUS_PENDING;
                     } else {
                         $paymentStatus = Payment::STATUS_CLEAR;
@@ -511,7 +511,7 @@ class PurchaseOrderController extends Controller
                 $balanceEffect = [];
 
                 // Handle cleared payment effects
-                if ($paymentStatus === Payment::STATUS_CLEAR) {
+                if ($paymentStatus == Payment::STATUS_CLEAR) {
                     $balanceEffect = $this->handleClearedPaymentEffect($purchaseOrder, $payment);
                     
                     if ($balanceEffect['overpayment_amount'] > 0) {
@@ -607,13 +607,13 @@ class PurchaseOrderController extends Controller
                 $balanceEffect = [];
 
                 // Handle balance effects based on status change
-                if ($oldStatus != Payment::STATUS_CLEAR && $newStatus === Payment::STATUS_CLEAR) {
+                if ($oldStatus != Payment::STATUS_CLEAR && $newStatus == Payment::STATUS_CLEAR) {
                     // Payment is now cleared - apply balance effects
                     $balanceEffect = $this->handleClearedPaymentEffect($purchaseOrder, $payment);
                     if ($balanceEffect['overpayment_amount'] > 0) {
                         $message .= " with overpayment of " . number_format($balanceEffect['overpayment_amount'], 2) . " added to supplier balance";
                     }
-                } elseif ($oldStatus === Payment::STATUS_CLEAR && $newStatus != Payment::STATUS_CLEAR) {
+                } elseif ($oldStatus == Payment::STATUS_CLEAR && $newStatus != Payment::STATUS_CLEAR) {
                     // Payment is no longer cleared - reverse balance effects
                     $balanceEffect = $this->handlePaymentReversalEffect($purchaseOrder, $payment);
                     if ($balanceEffect['overpay_reduction'] > 0) {
@@ -676,7 +676,7 @@ class PurchaseOrderController extends Controller
             ], 404);
         }
 
-        if ($purchaseOrder->status === 'completed') {
+        if ($purchaseOrder->status == 'completed') {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot cancel completed purchase order'

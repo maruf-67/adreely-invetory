@@ -16,7 +16,7 @@ The system automatically assigns default statuses based on payment method:
 
 ```php
 // Cheques and bank transfers start as pending
-if (payment_method_type === 'cheque' || payment_method_type === 'bank_transfer') {
+if (payment_method_type == 'cheque' || payment_method_type == 'bank_transfer') {
     default_status = 'pending'
 } else {
     // Cash, mobile banking, etc. are immediately clear

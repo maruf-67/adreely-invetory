@@ -115,7 +115,7 @@ class UserController extends Controller
         }
 
         // Staff can only create certain user types
-        if ($currentUser->user_type === 'staff' && !in_array($request->user_type, ['supplier', 'retailer', 'dealer', 'wholesaler', 'guest'])) {
+        if ($currentUser->user_type == 'staff' && !in_array($request->user_type, ['supplier', 'retailer', 'dealer', 'wholesaler', 'guest'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Staff can only create supplier, retailer, dealer, wholesaler, or guest users'
@@ -147,7 +147,7 @@ class UserController extends Controller
         ];
 
         // Only set password for staff users
-        if ($request->user_type === 'staff' && $request->password) {
+        if ($request->user_type == 'staff' && $request->password) {
             $userData['password'] = Hash::make($request->password);
         }
 
@@ -365,7 +365,7 @@ class UserController extends Controller
         }
 
         // Cannot delete yourself
-        if ($user->id === $currentUser->id) {
+        if ($user->id == $currentUser->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot delete yourself'

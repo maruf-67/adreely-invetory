@@ -141,7 +141,7 @@ class User extends Authenticatable
      */
     public function updateBalance(float $amount, string $type = 'credit'): void
     {
-        if ($type === 'credit') {
+        if ($type == 'credit') {
             $this->increment('current_balance', $amount);
         } else {
             $this->decrement('current_balance', $amount);
@@ -179,26 +179,30 @@ class User extends Authenticatable
     }
 
     /**
-     * Get all payments made by this user as supplier.
+     * Get all payments made to this user as supplier.
      */
-    public function supplierPayments(): HasMany
+    public function supplierPayments()
     {
-        return $this->hasMany(Payment::class, 'paymentable_id')
-                    ->where('paymentable_type', PurchaseOrder::class)
-                    ->whereHas('paymentable', function ($query) {
-                        $query->where('supplier_id', $this->id);
-                    });
+        return Payment::whereHasMorph(
+            'paymentable',
+            [PurchaseOrder::class],
+            function ($query) {
+                $query->where('supplier_id', $this->id);
+            }
+        );
     }
 
     /**
      * Get all payments made by this user as customer.
      */
-    // public function customerPayments(): HasMany
-    // {
-    //     return $this->hasMany(Payment::class, 'paymentable_id')
-    //                 ->where('paymentable_type', SalesOrder::class)
-    //                 ->whereHas('paymentable', function ($query) {
-    //                     $query->where('customer_id', $this->id);
-    //                 });
-    // }
+    public function customerPayments()
+    {
+        return Payment::whereHasMorph(
+            'paymentable',
+            [SalesOrder::class],
+            function ($query) {
+                $query->where('customer_id', $this->id);
+            }
+        );
+    }
 }
