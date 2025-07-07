@@ -139,7 +139,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [SalesOrderController::class, 'index']);
         Route::post('/', [SalesOrderController::class, 'store']);
         Route::get('/{id}', [SalesOrderController::class, 'show']);
-        Route::put('/{id}', [SalesOrderController::class, 'update']);
+        Route::put('/update/{id}', [SalesOrderController::class, 'update']);
         Route::put('/{id}/items', [SalesOrderController::class, 'updateItems']);
         Route::put('/{id}/confirm', [SalesOrderController::class, 'confirm']);
         

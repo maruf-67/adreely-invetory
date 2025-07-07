@@ -20,7 +20,7 @@ return new class extends Migration
             $table->date('order_date');
             $table->date('expected_delivery_date')->nullable();
             $table->date('delivered_date')->nullable();
-            $table->enum('status', ['pending', 'partial', 'completed', 'cancelled'])->default('pending');
+            $table->enum('status', ['pending', 'partial', 'completed', 'cancelled','shipped'])->default('pending');
             $table->decimal('sub_total', 15, 2);
             $table->decimal('discount', 15, 2)->default(0);
             $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');

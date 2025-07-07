@@ -24,6 +24,7 @@ return new class extends Migration
             $table->text('tracking_number')->nullable();
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
             
             $table->index(['business_id', 'sales_order_id']);

@@ -145,7 +145,7 @@ class SalesOrderController extends Controller
                 $taxAmount = ($afterDiscount * $taxRate) / 100;
                 $totalAmount = $afterDiscount + $taxAmount;
 
-                // Create sales order with 'pending' status instead of 'draft'
+                // Create sales order with 'pending' status instead of 'pending'
                 $salesOrder = SalesOrder::create([
                     'business_id' => $user->business_id,
                     'customer_id' => $request->customer_id,
@@ -232,7 +232,7 @@ class SalesOrderController extends Controller
      *
      * Features:
      * - Updates basic sales order information
-     * - Only allows updates to orders in draft or confirmed status
+     * - Only allows updates to orders in pending or confirmed status
      *
      * Security considerations:
      * - Only authenticated users can update their business sales orders
@@ -263,6 +263,7 @@ class SalesOrderController extends Controller
         $validator = Validator::make($request->all(), [
             'expected_delivery_date' => 'nullable|date',
             'notes' => 'nullable|string',
+            'status' => 'nullable|string|in:pending,partial,completed,cancelled'
         ]);
 
         if ($validator->fails()) {
@@ -277,7 +278,7 @@ class SalesOrderController extends Controller
             $salesOrder->update([
                 'expected_delivery_date' => $request->expected_delivery_date,
                 'notes' => $request->notes,
-                'updated_by' => $user->id,
+                'status' => $request->status,
             ]);
 
             return response()->json([
@@ -298,7 +299,7 @@ class SalesOrderController extends Controller
      * Confirm a sales order.
      *
      * Features:
-     * - Changes status from draft to confirmed
+     * - Changes status from pending to confirmed
      * - Generates invoice number
      * - Validates stock availability
      *
@@ -317,10 +318,10 @@ class SalesOrderController extends Controller
             ], 404);
         }
 
-        if ($salesOrder->status !== 'draft') {
+        if ($salesOrder->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'Sales order is not in draft status'
+                'message' => 'Sales order is not in pending status'
             ], 400);
         }
 
@@ -407,7 +408,7 @@ class SalesOrderController extends Controller
                     ], 404);
                 }
 
-                if (!in_array($salesOrder->status, ['confirmed', 'shipped'])) {
+                if (!in_array($salesOrder->status, ['partial','confirmed'])) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Sales order must be confirmed before shipping'
@@ -831,7 +832,7 @@ class SalesOrderController extends Controller
      * - Validates all item data before making changes
      *
      * Business Rules:
-     * - Only allows updates to orders with 'draft' or 'confirmed' status
+     * - Only allows updates to orders with 'pending' or 'confirmed' status
      * - Can modify items with shipped quantities, but cannot reduce quantity below shipped amount
      * - Prevents deletion of items with shipped quantities
      * - Automatically recalculates order totals based on item changes
@@ -901,12 +902,12 @@ class SalesOrderController extends Controller
                 }
 
                 // Check if sales order can be modified
-                if (!in_array($salesOrder->status, ['draft', 'confirmed'])) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Cannot update items for sales order with status: ' . $salesOrder->status
-                    ], 400);
-                }
+                 if (!in_array($salesOrder->status, ['pending', 'partial'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot update sales order that is not pending or partial'
+            ], 400);
+        }
 
                 // Verify all products belong to the business
                 $productIds = collect($request->items)->pluck('product_id');
