@@ -121,7 +121,7 @@ class BusinessController extends Controller
         }
         
         // Check if user has access to this business
-        if ($user->user_type !== 'admin' && $user->business_id !== $business->id) {
+        if ($user->user_type != 'admin' && $user->business_id != $business->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access to this business'
@@ -162,7 +162,7 @@ class BusinessController extends Controller
         }
         
         // Only owner can update business
-        if ($business->owner_id !== $user->id) {
+        if ($business->owner_id != $user->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only business owner can update business details'
@@ -225,7 +225,7 @@ class BusinessController extends Controller
         }
         
         // Only owner can delete business
-        if ($business->owner_id !== $user->id) {
+        if ($business->owner_id != $user->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only business owner can delete business'

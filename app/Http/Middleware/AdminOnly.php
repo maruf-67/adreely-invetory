@@ -18,7 +18,7 @@ class AdminOnly
     {
         $user = Auth::user();
 
-        if (!$user || $user->user_type !== 'admin') {
+        if (!$user || $user->user_type != 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Admin access required'

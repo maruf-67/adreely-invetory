@@ -224,7 +224,7 @@ class PurchaseOrderController extends Controller
             ], 404);
         }
 
-        if ($purchaseOrder->status !== 'pending' && $purchaseOrder->status !== 'partial') {
+        if ($purchaseOrder->status != 'pending' && $purchaseOrder->status != 'partial') {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot update purchase order that is not pending or partial'
@@ -607,13 +607,13 @@ class PurchaseOrderController extends Controller
                 $balanceEffect = [];
 
                 // Handle balance effects based on status change
-                if ($oldStatus !== Payment::STATUS_CLEAR && $newStatus === Payment::STATUS_CLEAR) {
+                if ($oldStatus != Payment::STATUS_CLEAR && $newStatus === Payment::STATUS_CLEAR) {
                     // Payment is now cleared - apply balance effects
                     $balanceEffect = $this->handleClearedPaymentEffect($purchaseOrder, $payment);
                     if ($balanceEffect['overpayment_amount'] > 0) {
                         $message .= " with overpayment of " . number_format($balanceEffect['overpayment_amount'], 2) . " added to supplier balance";
                     }
-                } elseif ($oldStatus === Payment::STATUS_CLEAR && $newStatus !== Payment::STATUS_CLEAR) {
+                } elseif ($oldStatus === Payment::STATUS_CLEAR && $newStatus != Payment::STATUS_CLEAR) {
                     // Payment is no longer cleared - reverse balance effects
                     $balanceEffect = $this->handlePaymentReversalEffect($purchaseOrder, $payment);
                     if ($balanceEffect['overpay_reduction'] > 0) {

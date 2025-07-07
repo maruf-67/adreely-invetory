@@ -223,16 +223,19 @@ class PaymentController extends Controller
             $query->where('transaction_date', '<=', now()->subDays($daysOld)->toDateString());
         }
 
-        $pendingPayments = $query->orderBy('transaction_date', 'asc')
+        $pendingPayments = (clone $query)->orderBy('transaction_date', 'asc')
                                 ->paginate($request->get('per_page', 15));
+
+        // Clone the query for summary calculations to avoid query builder state issues
+        $summaryQuery = clone $query;
 
         return response()->json([
             'success' => true,
             'data' => $pendingPayments,
             'summary' => [
-                'total_pending_amount' => $query->sum('amount'),
-                'total_pending_count' => $query->count(),
-                'oldest_payment' => $query->orderBy('transaction_date', 'asc')->first()?->transaction_date
+                'total_pending_amount' => $summaryQuery->sum('amount'),
+                'total_pending_count' => $summaryQuery->count(),
+                'oldest_payment' => ($first = $summaryQuery->orderBy('transaction_date', 'asc')->first()) ? $first->transaction_date : null
             ]
         ]);
     }
@@ -268,7 +271,7 @@ class PaymentController extends Controller
                                  ->whereIn('id', $paymentIds)
                                  ->get();
 
-                if ($payments->count() !== count($paymentIds)) {
+                if ($payments->count() != count($paymentIds)) {
                     return response()->json([
                         'success' => false,
                         'message' => 'One or more payments not found'
@@ -278,7 +281,7 @@ class PaymentController extends Controller
                 $updated = [];
                 foreach ($payments as $payment) {
                     $oldStatus = $payment->status;
-                    if ($oldStatus !== $newStatus) {
+                    if ($oldStatus != $newStatus) {
                         $payment->updateStatus($newStatus, $reason);
                         $updated[] = [
                             'id' => $payment->id,

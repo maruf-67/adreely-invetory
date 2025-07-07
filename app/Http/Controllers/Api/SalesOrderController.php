@@ -318,7 +318,7 @@ class SalesOrderController extends Controller
             ], 404);
         }
 
-        if ($salesOrder->status !== 'pending') {
+        if ($salesOrder->status != 'pending') {
             return response()->json([
                 'success' => false,
                 'message' => 'Sales order is not in pending status'
@@ -439,7 +439,7 @@ class SalesOrderController extends Controller
                 foreach ($request->items as $itemData) {
                     $salesOrderItem = SalesOrderItem::find($itemData['sales_order_item_id']);
                     
-                    if (!$salesOrderItem || $salesOrderItem->sales_order_id !== $salesOrder->id) {
+                    if (!$salesOrderItem || $salesOrderItem->sales_order_id != $salesOrder->id) {
                         throw new \Exception('Invalid sales order item');
                     }
 
@@ -732,13 +732,13 @@ class SalesOrderController extends Controller
                 $balanceEffect = null;
 
                 // Handle balance effects based on status change
-                if ($oldStatus !== 'clear' && $newStatus === 'clear') {
+                if ($oldStatus != 'clear' && $newStatus === 'clear') {
                     // Payment became cleared
                     $balanceEffect = $this->handleClearedPaymentEffect($salesOrder, $payment);
                     if ($balanceEffect['overpayment_amount'] > 0) {
                         $responseMessage .= ". Overpayment of " . number_format($balanceEffect['overpayment_amount'], 2) . " added to customer balance.";
                     }
-                } elseif ($oldStatus === 'clear' && $newStatus !== 'clear') {
+                } elseif ($oldStatus === 'clear' && $newStatus != 'clear') {
                     // Payment is no longer cleared
                     $balanceEffect = $this->handlePaymentReversalEffect($salesOrder, $payment);
                     if ($balanceEffect['balance_adjustment'] > 0) {

@@ -111,7 +111,7 @@ class ProductController extends Controller
         // Validate that category, brand, and unit belong to the same business
         if ($request->category_id) {
             $category = Category::find($request->category_id);
-            if (!$category || $category->business_id !== $user->business_id) {
+            if (!$category || $category->business_id != $user->business_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid category selected'
@@ -121,7 +121,7 @@ class ProductController extends Controller
 
         if ($request->brand_id) {
             $brand = Brand::find($request->brand_id);
-            if (!$brand || $brand->business_id !== $user->business_id) {
+            if (!$brand || $brand->business_id != $user->business_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid brand selected'
@@ -130,7 +130,7 @@ class ProductController extends Controller
         }
 
         $unit = Unit::find($request->unit_id);
-        if (!$unit || $unit->business_id !== $user->business_id) {
+        if (!$unit || $unit->business_id != $user->business_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid unit selected'
@@ -139,7 +139,7 @@ class ProductController extends Controller
 
         if ($request->buying_unit_id) {
             $buyingUnit = Unit::find($request->buying_unit_id);
-            if (!$buyingUnit || $buyingUnit->business_id !== $user->business_id) {
+            if (!$buyingUnit || $buyingUnit->business_id != $user->business_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid buying unit selected'
@@ -270,7 +270,7 @@ class ProductController extends Controller
         // Validate relationships if provided
         if ($request->has('category_id') && $request->category_id) {
             $category = Category::find($request->category_id);
-            if (!$category || $category->business_id !== $user->business_id) {
+            if (!$category || $category->business_id != $user->business_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid category selected'
@@ -280,7 +280,7 @@ class ProductController extends Controller
 
         if ($request->has('brand_id') && $request->brand_id) {
             $brand = Brand::find($request->brand_id);
-            if (!$brand || $brand->business_id !== $user->business_id) {
+            if (!$brand || $brand->business_id != $user->business_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid brand selected'
@@ -290,7 +290,7 @@ class ProductController extends Controller
 
         if ($request->has('unit_id')) {
             $unit = Unit::find($request->unit_id);
-            if (!$unit || $unit->business_id !== $user->business_id) {
+            if (!$unit || $unit->business_id != $user->business_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid unit selected'
@@ -300,7 +300,7 @@ class ProductController extends Controller
 
         if ($request->has('buying_unit_id')) {
             $buyingUnit = Unit::find($request->buying_unit_id);
-            if (!$buyingUnit || $buyingUnit->business_id !== $user->business_id) {
+            if (!$buyingUnit || $buyingUnit->business_id != $user->business_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid buying unit selected'

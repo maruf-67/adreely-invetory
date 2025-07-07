@@ -187,7 +187,7 @@ class UserController extends Controller
         }
 
         // Check if user belongs to same business
-        if ($user->business_id !== $currentUser->business_id) {
+        if ($user->business_id != $currentUser->business_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access to this user'
@@ -238,7 +238,7 @@ class UserController extends Controller
         }
 
         // Check if user belongs to same business
-        if ($user->business_id !== $currentUser->business_id) {
+        if ($user->business_id != $currentUser->business_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access to this user'
@@ -254,7 +254,7 @@ class UserController extends Controller
         }
 
         // Only admin can update admin and staff users
-        if (in_array($user->user_type, ['admin', 'staff']) && $currentUser->user_type !== 'admin') {
+        if (in_array($user->user_type, ['admin', 'staff']) && $currentUser->user_type != 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Only admin can update admin and staff users'
@@ -349,7 +349,7 @@ class UserController extends Controller
         }
 
         // Check if user belongs to same business
-        if ($user->business_id !== $currentUser->business_id) {
+        if ($user->business_id != $currentUser->business_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access to this user'
@@ -357,7 +357,7 @@ class UserController extends Controller
         }
 
         // Only admin can delete users
-        if ($currentUser->user_type !== 'admin') {
+        if ($currentUser->user_type != 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Only admin can delete users'
