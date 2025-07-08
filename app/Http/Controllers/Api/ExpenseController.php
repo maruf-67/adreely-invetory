@@ -42,15 +42,15 @@ class ExpenseController extends Controller
         // Filter by month and year
         if ($request->has('month') && $request->has('year')) {
             $query->whereMonth('expense_date', $request->month)
-                  ->whereYear('expense_date', $request->year);
+                ->whereYear('expense_date', $request->year);
         }
 
         // Search by title or reference number
         if ($request->has('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('reference_number', 'like', "%{$search}%");
+                    ->orWhere('reference_number', 'like', "%{$search}%");
             });
         }
 
@@ -141,7 +141,7 @@ class ExpenseController extends Controller
     public function show($id): JsonResponse
     {
         $user = Auth::user();
-        
+
         $expense = Expense::where('id', $id)
             ->where('business_id', $user->business_id)
             ->with(['expenseCategory', 'user'])
@@ -212,8 +212,12 @@ class ExpenseController extends Controller
         }
 
         $updateData = $request->only([
-            'expense_category_id', 'title', 'description', 'amount',
-            'expense_date', 'reference_number'
+            'expense_category_id',
+            'title',
+            'description',
+            'amount',
+            'expense_date',
+            'reference_number'
         ]);
 
         // Handle file upload and delete previous file
@@ -222,7 +226,7 @@ class ExpenseController extends Controller
             if ($expense->receipt_file && file_exists(public_path($expense->receipt_file))) {
                 unlink(public_path($expense->receipt_file));
             }
-            
+
             // Upload new file
             $file = $request->file('receipt_file');
             $fileName = time() . '_' . $file->getClientOriginalName();
@@ -282,23 +286,23 @@ class ExpenseController extends Controller
     public function reports(Request $request): JsonResponse
     {
         $user = Auth::user();
-        $query = Expense::where('business_id', $user->business_id);
+        $query = Expense::where('expenses.business_id', $user->business_id);
 
         // Filter by date range
         if ($request->has('start_date')) {
-            $query->where('expense_date', '>=', $request->start_date);
+            $query->where('expenses.expense_date', '>=', $request->start_date);
         }
 
         if ($request->has('end_date')) {
-            $query->where('expense_date', '<=', $request->end_date);
+            $query->where('expenses.expense_date', '<=', $request->end_date);
         }
 
         // Monthly/Annual filters
         if ($request->has('month') && $request->has('year')) {
-            $query->whereMonth('expense_date', $request->month)
-                  ->whereYear('expense_date', $request->year);
+            $query->whereMonth('expenses.expense_date', $request->month)
+                ->whereYear('expenses.expense_date', $request->year);
         } elseif ($request->has('year')) {
-            $query->whereYear('expense_date', $request->year);
+            $query->whereYear('expenses.expense_date', $request->year);
         }
 
         // Total expenses
@@ -309,6 +313,7 @@ class ExpenseController extends Controller
         $expensesByCategory = (clone $query)
             ->join('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
             ->selectRaw('expense_categories.name as category_name, SUM(expenses.amount) as total_amount, COUNT(expenses.id) as expense_count')
+            ->where('expenses.business_id', $user->business_id)
             ->groupBy('expense_categories.id', 'expense_categories.name')
             ->orderByDesc('total_amount')
             ->get();
@@ -317,7 +322,7 @@ class ExpenseController extends Controller
         $monthlyBreakdown = [];
         if ($request->has('year')) {
             $monthlyBreakdown = (clone $query)
-                ->selectRaw('MONTH(expense_date) as month, SUM(amount) as total_amount, COUNT(id) as expense_count')
+                ->selectRaw('MONTH(expenses.expense_date) as month, SUM(expenses.amount) as total_amount, COUNT(expenses.id) as expense_count')
                 ->groupBy('month')
                 ->orderBy('month')
                 ->get()
