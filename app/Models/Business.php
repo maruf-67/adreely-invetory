@@ -96,4 +96,20 @@ class Business extends Model
     {
         return $this->hasMany(InventoryHistory::class);
     }
+
+    /**
+     * Get all expense categories for this business.
+     */
+    public function expenseCategories(): HasMany
+    {
+        return $this->hasMany(ExpenseCategory::class);
+    }
+
+    /**
+     * Get all expenses for this business.
+     */
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
 }

@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\UserBalanceController;
 use App\Http\Controllers\Api\SalesOrderController;
+use App\Http\Controllers\Api\ExpenseCategoryController;
+use App\Http\Controllers\Api\ExpenseController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -155,5 +157,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}/payments/{paymentId}/status', [SalesOrderController::class, 'updatePaymentStatus']);
         
         Route::put('/{id}/cancel', [SalesOrderController::class, 'cancel']);
+    });
+
+    // Expense Categories management
+    Route::prefix('expense-categories')->group(function () {
+        Route::get('/', [ExpenseCategoryController::class, 'index']);
+        Route::post('/', [ExpenseCategoryController::class, 'store']);
+        Route::get('/{id}', [ExpenseCategoryController::class, 'show']);
+        Route::put('/{id}', [ExpenseCategoryController::class, 'update']);
+        Route::delete('/{id}', [ExpenseCategoryController::class, 'destroy']);
+    });
+
+    // Expenses management
+    Route::prefix('expenses')->group(function () {
+        Route::get('/', [ExpenseController::class, 'index']);
+        Route::post('/', [ExpenseController::class, 'store']);
+        Route::get('/reports', [ExpenseController::class, 'reports']);
+        Route::get('/{id}', [ExpenseController::class, 'show']);
+        Route::put('/{id}', [ExpenseController::class, 'update']);
+        Route::delete('/{id}', [ExpenseController::class, 'destroy']);
     });
 });
