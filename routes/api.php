@@ -85,6 +85,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [ProductController::class, 'show']);
         Route::put('/{id}', [ProductController::class, 'update']);
         Route::delete('/{id}', [ProductController::class, 'destroy']);
+        // New endpoints for inventory features
+        Route::get('/{id}/stock-history', [ProductController::class, 'stockHistory']);
+        Route::post('/{id}/adjust-stock', [ProductController::class, 'adjustStock']);
     });
 
     // Payment Methods management

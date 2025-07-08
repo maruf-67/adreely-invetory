@@ -411,4 +411,77 @@ class ProductController extends Controller
             'data' => $products
         ]);
     }
+
+     /**
+     * Get the stock movement history for a product.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function stockHistory($id): JsonResponse
+    {
+        $user = Auth::user();
+        $product = Product::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found'
+            ], 404);
+        }
+        $history = $product->inventoryHistories()->with('user')->orderByDesc('created_at')->get();
+        return response()->json([
+            'success' => true,
+            'data' => $history
+        ]);
+    }
+
+    /**
+     * Adjust the stock for a product (manual correction).
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function adjustStock(Request $request, $id): JsonResponse
+    {
+        $user = Auth::user();
+        $product = Product::where('id', $id)
+            ->where('business_id', $user->business_id)
+            ->first();
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found'
+            ], 404);
+        }
+        $validated = $request->validate([
+            'quantity' => 'required|integer',
+            'reason' => 'required|string|max:255',
+        ]);
+        $before = $product->quantity;
+        $after = $validated['quantity'];
+        $change = $after - $before;
+        $product->quantity = $after;
+        $product->save();
+        // Log inventory history
+        $product->inventoryHistories()->create([
+            'business_id' => $product->business_id,
+            'user_id' => $user->id,
+            'type' => 'adjustment',
+            'quantity_change' => $change,
+            'quantity_before' => $before,
+            'quantity_after' => $after,
+            'reason' => $validated['reason'],
+            'reference_type' => null,
+            'reference_id' => null,
+        ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Stock adjusted successfully',
+            'data' => $product->fresh()
+        ]);
+    }
+
 }
