@@ -19,10 +19,12 @@ class Business extends Model
         'description',
         'owner_id',
         'is_active',
+        'staff_permissions',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'staff_permissions' => 'array',
     ];
 
     /**
@@ -111,5 +113,37 @@ class Business extends Model
     public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class);
+    }
+
+    /**
+     * Get all employee salaries for this business.
+     */
+    public function employeeSalaries(): HasMany
+    {
+        return $this->hasMany(EmployeeSalary::class);
+    }
+
+    /**
+     * Get staff members for this business.
+     */
+    public function staff(): HasMany
+    {
+        return $this->users()->where('user_type', 'staff');
+    }
+
+    /**
+     * Check if staff has permission
+     */
+    public function hasStaffPermission(string $permission): bool
+    {
+        return in_array($permission, $this->staff_permissions ?? []);
+    }
+
+    /**
+     * Get all staff permissions
+     */
+    public function getStaffPermissions(): array
+    {
+        return $this->staff_permissions ?? [];
     }
 }

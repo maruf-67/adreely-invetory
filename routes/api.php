@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\UserBalanceController;
 use App\Http\Controllers\Api\SalesOrderController;
 use App\Http\Controllers\Api\ExpenseCategoryController;
 use App\Http\Controllers\Api\ExpenseController;
+use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\StaffPermissionController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -170,11 +172,31 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Expenses management
     Route::prefix('expenses')->group(function () {
-        Route::get('/', [ExpenseController::class, 'index']);
-        Route::post('/', [ExpenseController::class, 'store']);
-        Route::get('/reports', [ExpenseController::class, 'reports']);
-        Route::get('/{id}', [ExpenseController::class, 'show']);
-        Route::put('/{id}', [ExpenseController::class, 'update']);
-        Route::delete('/{id}', [ExpenseController::class, 'destroy']);
+        Route::get('/', [ExpenseController::class, 'index'])->middleware('staff_permission:view_expenses');
+        Route::post('/', [ExpenseController::class, 'store'])->middleware('staff_permission:create_expenses');
+        Route::get('/reports', [ExpenseController::class, 'reports'])->middleware('staff_permission:view_expense_reports');
+        Route::get('/{id}', [ExpenseController::class, 'show'])->middleware('staff_permission:view_expenses');
+        Route::put('/{id}', [ExpenseController::class, 'update'])->middleware('staff_permission:edit_expenses');
+        Route::delete('/{id}', [ExpenseController::class, 'destroy'])->middleware('staff_permission:delete_expenses');
+    });
+
+    // Employee Management
+    Route::prefix('employees')->group(function () {
+        Route::get('/', [EmployeeController::class, 'index'])->middleware('staff_permission:view_users');
+        Route::get('/{id}', [EmployeeController::class, 'show'])->middleware('staff_permission:view_users');
+        Route::get('/{id}/salary-history', [EmployeeController::class, 'salaryHistory'])->middleware('staff_permission:view_salaries');
+        Route::post('/{id}/salary', [EmployeeController::class, 'addSalary'])->middleware('staff_permission:create_salaries');
+        Route::put('/{id}/salary/{salaryId}', [EmployeeController::class, 'updateSalary'])->middleware('staff_permission:edit_salaries');
+        Route::delete('/{id}/salary/{salaryId}', [EmployeeController::class, 'deleteSalary'])->middleware('staff_permission:delete_salaries');
+        Route::get('/{id}/salary-summary', [EmployeeController::class, 'salarySummary'])->middleware('staff_permission:view_salaries');
+    });
+
+    // Staff Permissions Management
+    Route::prefix('staff-permissions')->group(function () {
+        Route::get('/available', [StaffPermissionController::class, 'getAvailablePermissions']);
+        Route::get('/current', [StaffPermissionController::class, 'getCurrentPermissions'])->middleware('staff_permission:manage_staff_permissions');
+        Route::put('/update', [StaffPermissionController::class, 'updatePermissions'])->middleware('staff_permission:manage_staff_permissions');
+        Route::get('/user/{userId}', [StaffPermissionController::class, 'getUserPermissions'])->middleware('staff_permission:view_users');
+        Route::post('/check', [StaffPermissionController::class, 'checkPermission']);
     });
 });

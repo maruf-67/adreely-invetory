@@ -205,4 +205,44 @@ class User extends Authenticatable
             }
         );
     }
+
+    /**
+     * Get all salary records for this employee.
+     */
+    public function salaries(): HasMany
+    {
+        return $this->hasMany(EmployeeSalary::class, 'employee_id');
+    }
+
+    /**
+     * Check if user has specific permission (for staff users)
+     */
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->user_type === 'admin') {
+            return true; // Admin has all permissions
+        }
+
+        if ($this->user_type !== 'staff') {
+            return false; // Only staff and admin have permissions
+        }
+
+        return $this->business?->hasStaffPermission($permission) ?? false;
+    }
+
+    /**
+     * Get all permissions for this user
+     */
+    public function getPermissions(): array
+    {
+        if ($this->user_type === 'admin') {
+            return \App\Enums\Permission::getAllPermissions();
+        }
+
+        if ($this->user_type !== 'staff') {
+            return [];
+        }
+
+        return $this->business?->getStaffPermissions() ?? [];
+    }
 }

@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'business' => \App\Http\Middleware\EnsureUserBelongsToBusiness::class,
             'admin' => \App\Http\Middleware\AdminOnly::class,
+            'staff_permission' => \App\Http\Middleware\CheckStaffPermission::class,
         ]);
 
         //
