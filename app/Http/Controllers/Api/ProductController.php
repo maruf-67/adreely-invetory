@@ -484,4 +484,40 @@ class ProductController extends Controller
         ]);
     }
 
+    /**
+     * List only products that are in stock (quantity > 0) for the authenticated user's business.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function inStock(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        $query = Product::where('business_id', $user->business_id)
+            ->where('quantity', '>', 0)
+            ->with(['category', 'brand', 'unit', 'buyingUnit']);
+
+        // Optional: allow filtering by category, brand, or search
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+        if ($request->has('brand_id')) {
+            $query->where('brand_id', $request->brand_id);
+        }
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        $products = $query->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $products
+        ]);
+    }
+
 }
