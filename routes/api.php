@@ -173,29 +173,29 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Expenses management
     Route::prefix('expenses')->group(function () {
-        Route::get('/', [ExpenseController::class, 'index'])->middleware('staff_permission:view_expenses');
-        Route::post('/', [ExpenseController::class, 'store'])->middleware('staff_permission:create_expenses');
-        Route::get('/reports', [ExpenseController::class, 'reports'])->middleware('staff_permission:view_expense_reports');
-        Route::get('/{id}', [ExpenseController::class, 'show'])->middleware('staff_permission:view_expenses');
-        Route::put('/{id}', [ExpenseController::class, 'update'])->middleware('staff_permission:edit_expenses');
-        Route::delete('/{id}', [ExpenseController::class, 'destroy'])->middleware('staff_permission:delete_expenses');
+        Route::get('/', [ExpenseController::class, 'index']);
+        Route::post('/', [ExpenseController::class, 'store']);
+        Route::get('/reports', [ExpenseController::class, 'reports']);
+        Route::get('/{id}', [ExpenseController::class, 'show']);
+        Route::put('/{id}', [ExpenseController::class, 'update']);
+        Route::delete('/{id}', [ExpenseController::class, 'destroy']);
     });
 
     // Report management
     Route::prefix('reports')->group(function () {
-        Route::get('/daily-transaction', [ReportController::class, 'dailyTransaction'])->middleware('staff_permission:view_reports');
-        Route::get('/daily-income-expense', [ReportController::class, 'dailyIncomeExpense'])->middleware('staff_permission:view_reports');
+        Route::get('/daily-transaction', [ReportController::class, 'dailyTransaction']);
+        Route::get('/daily-income-expense', [ReportController::class, 'dailyIncomeExpense']);
     });
 
     // Employee Management
     Route::prefix('employees')->group(function () {
-        Route::get('/', [EmployeeController::class, 'index'])->middleware('staff_permission:view_users');
-        Route::get('/{id}', [EmployeeController::class, 'show'])->middleware('staff_permission:view_users');
-        Route::get('/{id}/salary-history', [EmployeeController::class, 'salaryHistory'])->middleware('staff_permission:view_salaries');
-        Route::post('/{id}/salary', [EmployeeController::class, 'addSalary'])->middleware('staff_permission:create_salaries');
-        Route::put('/{id}/salary/{salaryId}', [EmployeeController::class, 'updateSalary'])->middleware('staff_permission:edit_salaries');
-        Route::delete('/{id}/salary/{salaryId}', [EmployeeController::class, 'deleteSalary'])->middleware('staff_permission:delete_salaries');
-        Route::get('/{id}/salary-summary', [EmployeeController::class, 'salarySummary'])->middleware('staff_permission:view_salaries');
+        Route::get('/', [EmployeeController::class, 'index']);
+        Route::get('/{id}', [EmployeeController::class, 'show']);
+        Route::get('/{id}/salary-history', [EmployeeController::class, 'salaryHistory']);
+        Route::post('/{id}/salary', [EmployeeController::class, 'addSalary']);
+        Route::put('/{id}/salary/{salaryId}', [EmployeeController::class, 'updateSalary']);
+        Route::delete('/{id}/salary/{salaryId}', [EmployeeController::class, 'deleteSalary']);
+        Route::get('/{id}/salary-summary', [EmployeeController::class, 'salarySummary']);
     });
 
 });
