@@ -15,7 +15,6 @@ use App\Http\Controllers\Api\SalesOrderController;
 use App\Http\Controllers\Api\ExpenseCategoryController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\EmployeeController;
-use App\Http\Controllers\Api\StaffPermissionController;
 use App\Http\Controllers\Api\ReportController;
 use Illuminate\Support\Facades\Route;
 
@@ -199,12 +198,4 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/salary-summary', [EmployeeController::class, 'salarySummary'])->middleware('staff_permission:view_salaries');
     });
 
-    // Staff Permissions Management
-    Route::prefix('staff-permissions')->group(function () {
-        Route::get('/available', [StaffPermissionController::class, 'getAvailablePermissions']);
-        Route::get('/current', [StaffPermissionController::class, 'getCurrentPermissions'])->middleware('staff_permission:manage_staff_permissions');
-        Route::put('/update', [StaffPermissionController::class, 'updatePermissions'])->middleware('staff_permission:manage_staff_permissions');
-        Route::get('/user/{userId}', [StaffPermissionController::class, 'getUserPermissions'])->middleware('staff_permission:view_users');
-        Route::post('/check', [StaffPermissionController::class, 'checkPermission']);
-    });
 });
