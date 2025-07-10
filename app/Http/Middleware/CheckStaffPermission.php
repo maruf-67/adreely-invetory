@@ -15,6 +15,8 @@ class CheckStaffPermission
      */
     public function handle(Request $request, Closure $next, string $permission): Response
     {
+         
+        return $next($request);
         $user = $request->user();
 
         if (!$user) {

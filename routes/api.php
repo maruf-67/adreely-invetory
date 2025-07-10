@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ExpenseCategoryController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\StaffPermissionController;
+use App\Http\Controllers\Api\ReportController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -179,6 +180,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [ExpenseController::class, 'show'])->middleware('staff_permission:view_expenses');
         Route::put('/{id}', [ExpenseController::class, 'update'])->middleware('staff_permission:edit_expenses');
         Route::delete('/{id}', [ExpenseController::class, 'destroy'])->middleware('staff_permission:delete_expenses');
+    });
+
+    // Report management
+    Route::prefix('reports')->group(function () {
+        Route::get('/daily-transaction', [ReportController::class, 'dailyTransaction'])->middleware('staff_permission:view_reports');
+        Route::get('/daily-income-expense', [ReportController::class, 'dailyIncomeExpense'])->middleware('staff_permission:view_reports');
     });
 
     // Employee Management
