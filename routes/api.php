@@ -16,12 +16,15 @@ use App\Http\Controllers\Api\ExpenseCategoryController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\InvestorController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+   
+
 });
 
 // Protected routes
@@ -198,4 +201,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/salary-summary', [EmployeeController::class, 'salarySummary']);
     });
 
+     // Investor Management
+    Route::prefix('investors')->group(function () {
+        Route::get('/', [InvestorController::class, 'index']);
+        Route::post('/', [InvestorController::class, 'store']);
+        Route::get('/summary', [InvestorController::class, 'summary']);
+        Route::get('/{id}', [InvestorController::class, 'show']);
+        Route::put('/{id}', [InvestorController::class, 'update']);
+        Route::delete('/{id}', [InvestorController::class, 'destroy']);
+        Route::patch('/{id}/close', [InvestorController::class, 'close']);
+        Route::patch('/{id}/extend', [InvestorController::class, 'extend']);
+        Route::get('/{id}/profit', [InvestorController::class, 'calculateProfit']);
+    });
 });

@@ -36,6 +36,14 @@ class Business extends Model
     }
 
     /**
+     * Get all investors for this business.
+     */
+    public function investors()
+    {
+        return $this->hasMany(Investor::class);
+    }
+
+    /**
      * Get all users for this business.
      */
     public function users(): HasMany
