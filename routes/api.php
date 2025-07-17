@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\InvestorController;
+use App\Http\Controllers\Api\ExchangeController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -210,5 +211,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/{id}/close', 'close');
         Route::patch('/{id}/extend', 'extend');
         Route::get('/{id}/profit', 'calculateProfit');
+    });
+
+    // Exchange Management
+    Route::controller(ExchangeController::class)->prefix('exchanges')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
+        Route::post('/{id}/payments', 'addPayment');
+        Route::put('/{id}/status', 'updateStatus');
     });
 });
