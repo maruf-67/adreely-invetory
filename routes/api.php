@@ -20,197 +20,195 @@ use App\Http\Controllers\Api\InvestorController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
-Route::prefix('auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
-   
-
+Route::controller(AuthController::class)->prefix('auth')->group(function () {
+    Route::post('/register', 'register');
+    Route::post('/login', 'login');
 });
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth routes
-    Route::prefix('auth')->group(function () {
-        Route::get('/profile', [AuthController::class, 'profile']);
-        Route::put('/profile', [AuthController::class, 'updateProfile']);
-        Route::post('/change-password', [AuthController::class, 'changePassword']);
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+    Route::controller(AuthController::class)->prefix('auth')->group(function () {
+        Route::get('/profile', 'profile');
+        Route::put('/profile', 'updateProfile');
+        Route::post('/change-password', 'changePassword');
+        Route::post('/logout', 'logout');
+        Route::post('/logout-all', 'logoutAll');
     });
 
     // Business management routes
-    Route::prefix('businesses')->group(function () {
-        Route::get('/', [BusinessController::class, 'index']);
-        Route::post('/', [BusinessController::class, 'store']);
-        Route::get('/{id}', [BusinessController::class, 'show']);
-        Route::put('/{id}', [BusinessController::class, 'update']);
-        Route::delete('/{id}', [BusinessController::class, 'destroy']);
+    Route::controller(BusinessController::class)->prefix('businesses')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
     });
 
     // User management routes
-    Route::prefix('users')->group(function () {
-        Route::get('/', [UserController::class, 'index']);
-        Route::post('/', [UserController::class, 'store']);
-        Route::get('/type/{type}', [UserController::class, 'getByType']);
-        Route::get('/{id}', [UserController::class, 'show']);
-        Route::put('/{id}', [UserController::class, 'update']);
-        Route::delete('/{id}', [UserController::class, 'destroy']);
+    Route::controller(UserController::class)->prefix('users')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/type/{type}', 'getByType');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
     });
 
     // Categories management
-    Route::prefix('categories')->group(function () {
-        Route::get('/', [CategoryController::class, 'index']);
-        Route::post('/', [CategoryController::class, 'store']);
-        Route::get('/{id}', [CategoryController::class, 'show']);
-        Route::put('/{id}', [CategoryController::class, 'update']);
-        Route::delete('/{id}', [CategoryController::class, 'destroy']);
+    Route::controller(CategoryController::class)->prefix('categories')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
     });
     
     // Brands management
-    Route::prefix('brands')->group(function () {
-        Route::get('/', [BrandController::class, 'index']);
-        Route::post('/', [BrandController::class, 'store']);
-        Route::get('/{id}', [BrandController::class, 'show']);
-        Route::put('/{id}', [BrandController::class, 'update']);
-        Route::delete('/{id}', [BrandController::class, 'destroy']);
+    Route::controller(BrandController::class)->prefix('brands')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
     });
     
     // Units management
-    Route::prefix('units')->group(function () {
-        Route::get('/', [UnitController::class, 'index']);
-        Route::post('/', [UnitController::class, 'store']);
-        Route::get('/{id}', [UnitController::class, 'show']);
-        Route::put('/{id}', [UnitController::class, 'update']);
-        Route::delete('/{id}', [UnitController::class, 'destroy']);
+    Route::controller(UnitController::class)->prefix('units')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
     });
     
     // Products management
-    Route::prefix('products')->group(function () {
-        Route::get('/', [ProductController::class, 'index']);
-        Route::post('/', [ProductController::class, 'store']);
-        Route::get('/low-stock', [ProductController::class, 'lowStock']);
-        Route::get('/in-stock', [ProductController::class, 'inStock']);
-        Route::get('/{id}', [ProductController::class, 'show']);
-        Route::put('/{id}', [ProductController::class, 'update']);
-        Route::delete('/{id}', [ProductController::class, 'destroy']);
+    Route::controller(ProductController::class)->prefix('products')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/low-stock', 'lowStock');
+        Route::get('/in-stock', 'inStock');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
         // New endpoints for inventory features
-        Route::get('/{id}/stock-history', [ProductController::class, 'stockHistory']);
-        Route::post('/{id}/adjust-stock', [ProductController::class, 'adjustStock']);
+        Route::get('/{id}/stock-history', 'stockHistory');
+        Route::post('/{id}/adjust-stock', 'adjustStock');
     });
 
     // Payment Methods management
-    Route::prefix('payment-methods')->group(function () {
-        Route::get('/', [PaymentMethodController::class, 'index']);
-        Route::post('/', [PaymentMethodController::class, 'store']);
-        Route::get('/{id}', [PaymentMethodController::class, 'show']);
-        Route::put('/{id}', [PaymentMethodController::class, 'update']);
-        Route::delete('/{id}', [PaymentMethodController::class, 'destroy']);
+    Route::controller(PaymentMethodController::class)->prefix('payment-methods')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
     });
 
     // Purchase Order management
-    Route::prefix('purchase-orders')->group(function () {
-        Route::get('/', [PurchaseOrderController::class, 'index']);
-        Route::post('/', [PurchaseOrderController::class, 'store']);
-        Route::get('/{id}', [PurchaseOrderController::class, 'show']);
-        Route::put('/{id}', [PurchaseOrderController::class, 'update']);
-        Route::put('/{id}/items', [PurchaseOrderController::class, 'updateItems']);
+    Route::controller(PurchaseOrderController::class)->prefix('purchase-orders')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::put('/{id}/items', 'updateItems');
                 
         // Shipment management
-        Route::post('/{id}/shipments', [PurchaseOrderController::class, 'receiveShipment']);
-        Route::get('/{id}/shipments', [PurchaseOrderController::class, 'getShipments']);
+        Route::post('/{id}/shipments', 'receiveShipment');
+        Route::get('/{id}/shipments', 'getShipments');
         
         // Payment management
-        Route::post('/{id}/payments', [PurchaseOrderController::class, 'addPayment']);
-        Route::put('/{id}/payments/{paymentId}/status', [PurchaseOrderController::class, 'updatePaymentStatus']);
+        Route::post('/{id}/payments', 'addPayment');
+        Route::put('/{id}/payments/{paymentId}/status', 'updatePaymentStatus');
         
-        Route::put('/{id}/cancel', [PurchaseOrderController::class, 'cancel']);
+        Route::put('/{id}/cancel', 'cancel');
     });
 
     // User Balance management
-    Route::prefix('user-balances')->group(function () {
-        Route::get('/summary', [UserBalanceController::class, 'getBusinessBalanceSummary']);
-        Route::get('/{userId}', [UserBalanceController::class, 'getUserBalance']);
-        Route::get('/{userId}/history', [UserBalanceController::class, 'getUserBalanceHistory']);
-        Route::post('/{userId}/adjustment', [UserBalanceController::class, 'addBalanceAdjustment']);
-        Route::get('/{userId}/payments', [UserBalanceController::class, 'getUserPaymentHistory']);
+    Route::controller(UserBalanceController::class)->prefix('user-balances')->group(function () {
+        Route::get('/summary', 'getBusinessBalanceSummary');
+        Route::get('/{userId}', 'getUserBalance');
+        Route::get('/{userId}/history', 'getUserBalanceHistory');
+        Route::post('/{userId}/adjustment', 'addBalanceAdjustment');
+        Route::get('/{userId}/payments', 'getUserPaymentHistory');
     });
 
     // Payment management
-    Route::prefix('payments')->group(function () {
-        Route::get('/', [PaymentController::class, 'index']);
-        Route::get('/purchase-orders/{id?}', [PaymentController::class, 'getPurchaseOrderPayments']);
-        Route::get('/summary', [PaymentController::class, 'getSummary']);
-        Route::get('/pending', [PaymentController::class, 'getPendingPayments']);
-        Route::put('/{id}/status', [PaymentController::class, 'updateStatus']);
-        Route::put('/bulk-status', [PaymentController::class, 'bulkUpdateStatus']);
+    Route::controller(PaymentController::class)->prefix('payments')->group(function () {
+        Route::get('/', 'index');
+        Route::get('/purchase-orders/{id?}', 'getPurchaseOrderPayments');
+        Route::get('/summary', 'getSummary');
+        Route::get('/pending', 'getPendingPayments');
+        Route::put('/{id}/status', 'updateStatus');
+        Route::put('/bulk-status', 'bulkUpdateStatus');
     });
 
     // Sales Order management
-    Route::prefix('sales-orders')->group(function () {
-        Route::get('/', [SalesOrderController::class, 'index']);
-        Route::post('/', [SalesOrderController::class, 'store']);
-        Route::get('/{id}', [SalesOrderController::class, 'show']);
-        Route::put('/update/{id}', [SalesOrderController::class, 'update']);
-        Route::put('/{id}/items', [SalesOrderController::class, 'updateItems']);
-        Route::put('/{id}/confirm', [SalesOrderController::class, 'confirm']);
+    Route::controller(SalesOrderController::class)->prefix('sales-orders')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/update/{id}', 'update');
+        Route::put('/{id}/items', 'updateItems');
+        Route::put('/{id}/confirm', 'confirm');
         
         // Shipment management
-        Route::post('/{id}/ship', [SalesOrderController::class, 'ship']);
-        Route::get('/{id}/shipments', [SalesOrderController::class, 'getShipments']);
+        Route::post('/{id}/ship', 'ship');
+        Route::get('/{id}/shipments', 'getShipments');
         
         // Payment management
-        Route::post('/{id}/payments', [SalesOrderController::class, 'addPayment']);
-        Route::put('/{id}/payments/{paymentId}/status', [SalesOrderController::class, 'updatePaymentStatus']);
+        Route::post('/{id}/payments', 'addPayment');
+        Route::put('/{id}/payments/{paymentId}/status', 'updatePaymentStatus');
         
-        Route::put('/{id}/cancel', [SalesOrderController::class, 'cancel']);
+        Route::put('/{id}/cancel', 'cancel');
     });
 
     // Expense Categories management
-    Route::prefix('expense-categories')->group(function () {
-        Route::get('/', [ExpenseCategoryController::class, 'index']);
-        Route::post('/', [ExpenseCategoryController::class, 'store']);
-        Route::get('/{id}', [ExpenseCategoryController::class, 'show']);
-        Route::put('/{id}', [ExpenseCategoryController::class, 'update']);
-        Route::delete('/{id}', [ExpenseCategoryController::class, 'destroy']);
+    Route::controller(ExpenseCategoryController::class)->prefix('expense-categories')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
     });
 
     // Expenses management
-    Route::prefix('expenses')->group(function () {
-        Route::get('/', [ExpenseController::class, 'index']);
-        Route::post('/', [ExpenseController::class, 'store']);
-        Route::get('/reports', [ExpenseController::class, 'reports']);
-        Route::get('/{id}', [ExpenseController::class, 'show']);
-        Route::put('/{id}', [ExpenseController::class, 'update']);
-        Route::delete('/{id}', [ExpenseController::class, 'destroy']);
+    Route::controller(ExpenseController::class)->prefix('expenses')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/reports', 'reports');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
     });
 
     // Report management
-    Route::prefix('reports')->group(function () {
-        Route::get('/daily-transaction', [ReportController::class, 'dailyTransaction']);
-        Route::get('/daily-income-expense', [ReportController::class, 'dailyIncomeExpense']);
+    Route::controller(ReportController::class)->prefix('reports')->group(function () {
+        Route::get('/daily-transaction', 'dailyTransaction');
+        Route::get('/daily-income-expense', 'dailyIncomeExpense');
     });
 
     // Employee Management
-    Route::prefix('employees')->group(function () {
-        Route::get('/', [EmployeeController::class, 'index']);
-        Route::get('/{id}', [EmployeeController::class, 'show']);
-        Route::get('/{id}/salary-history', [EmployeeController::class, 'salaryHistory']);
-        Route::post('/{id}/salary', [EmployeeController::class, 'addSalary']);
-        Route::put('/{id}/salary/{salaryId}', [EmployeeController::class, 'updateSalary']);
-        Route::delete('/{id}/salary/{salaryId}', [EmployeeController::class, 'deleteSalary']);
-        Route::get('/{id}/salary-summary', [EmployeeController::class, 'salarySummary']);
+    Route::controller(EmployeeController::class)->prefix('employees')->group(function () {
+        Route::get('/', 'index');
+        Route::get('/{id}', 'show');
+        Route::get('/{id}/salary-history', 'salaryHistory');
+        Route::post('/{id}/salary', 'addSalary');
+        Route::put('/{id}/salary/{salaryId}', 'updateSalary');
+        Route::delete('/{id}/salary/{salaryId}', 'deleteSalary');
+        Route::get('/{id}/salary-summary', 'salarySummary');
     });
 
      // Investor Management
-    Route::prefix('investors')->group(function () {
-        Route::get('/', [InvestorController::class, 'index']);
-        Route::post('/', [InvestorController::class, 'store']);
-        Route::get('/summary', [InvestorController::class, 'summary']);
-        Route::get('/{id}', [InvestorController::class, 'show']);
-        Route::put('/{id}', [InvestorController::class, 'update']);
-        Route::delete('/{id}', [InvestorController::class, 'destroy']);
-        Route::patch('/{id}/close', [InvestorController::class, 'close']);
-        Route::patch('/{id}/extend', [InvestorController::class, 'extend']);
-        Route::get('/{id}/profit', [InvestorController::class, 'calculateProfit']);
+    Route::controller(InvestorController::class)->prefix('investors')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/summary', 'summary');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
+        Route::patch('/{id}/close', 'close');
+        Route::patch('/{id}/extend', 'extend');
+        Route::get('/{id}/profit', 'calculateProfit');
     });
 });
