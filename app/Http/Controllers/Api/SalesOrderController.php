@@ -151,7 +151,7 @@ class SalesOrderController extends Controller
                     'customer_id' => $request->customer_id,
                     'order_date' => $request->order_date,
                     'expected_delivery_date' => $request->expected_delivery_date,
-                    'status' => 'pending',
+                    'status' => 'completed',
                     'sub_total' => $subTotal,
                     'discount' => $discountAmount,
                     'discount_type' => $discountType,
