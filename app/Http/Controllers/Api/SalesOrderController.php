@@ -353,128 +353,127 @@ class SalesOrderController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($request, $id) {
-                $user = Auth::user();
-                $salesOrder = SalesOrder::where('business_id', $user->business_id)
-                    ->with('items')
-                    ->find($id);
+            
+            $user = Auth::user();
+            $salesOrder = SalesOrder::where('business_id', $user->business_id)
+            ->with('items')
+            ->find($id);
 
-                if (!$salesOrder) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Sales order not found'
-                    ], 404);
-                }
-
-                if (!in_array($salesOrder->status, ['pending', 'partial'])) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Sales order must be pending or partial to ship'
-                    ], 400);
-                }
-
-                // Generate shipment number if not provided
-                $shipmentNumber = $request->shipment_number ??
-                    'SH-' . $salesOrder->id . '-' .
-                    str_pad($salesOrder->shipments()->count() + 1, 3, '0', STR_PAD_LEFT);
-
-                // Create shipment
-                $shipment = SalesShipment::create([
-                    'business_id' => $user->business_id,
-                    'sales_order_id' => $salesOrder->id,
-                    'shipment_number' => $shipmentNumber,
-                    'shipped_date' => $request->shipped_date,
-                    'expected_delivery_date' => $request->expected_delivery_date,
-                    'status' => 'shipped',
-                    'tracking_number' => $request->tracking_number,
-                    'notes' => $request->notes,
-                    'created_by' => $user->id,
-                ]);
-
-                $shipmentTotal = 0;
-
-                // Process each item in the shipment
-                foreach ($request->items as $itemData) {
-                    $salesOrderItem = SalesOrderItem::find($itemData['sales_order_item_id']);
-
-                    if (!$salesOrderItem || $salesOrderItem->sales_order_id != $salesOrder->id) {
-                        throw new \Exception('Invalid sales order item');
-                    }
-
-                    $quantityShipped = $itemData['quantity_shipped'];
-                    $unitPrice = $itemData['unit_price'];
-                    $totalPrice = $quantityShipped * $unitPrice;
-                    $shipmentTotal += $totalPrice;
-
-                    // Check available quantity
-                    $availableToShip = $salesOrderItem->quantity_ordered - $salesOrderItem->quantity_shipped;
-                    if ($quantityShipped > $availableToShip) {
-                        throw new \Exception("Cannot ship more than available quantity for item");
-                    }
-
-                    // Check stock availability
-                    $product = Product::where('id', $salesOrderItem->product_id)
-                        ->where('business_id', $user->business_id)
-                        ->first();
-                    
-                    if (!$product) {
-                        throw new \Exception("Product not found or doesn't belong to your business");
-                    }
-                    
-                    if ($product->quantity < $quantityShipped) {
-                        throw new \Exception("Insufficient stock for product: {$product->name}");
-                    }
-
-                    // Create shipment item
-                    SalesShipmentItem::create([
-                        'shipment_id' => $shipment->id,
-                        'sales_order_item_id' => $salesOrderItem->id,
-                        'quantity_shipped' => $quantityShipped,
-                        'unit_price' => $unitPrice,
-                        'total_price' => $totalPrice,
-                        'notes' => $itemData['notes'] ?? null,
-                    ]);
-
-                    // Update sales order item quantities
-                    $salesOrderItem->increment('quantity_shipped', $quantityShipped);
-
-                    // Update product stock
-                    $quantityBefore = $product->quantity;
-                    $product->decrement('quantity', $quantityShipped);
-
-                    // Record inventory history
-                    InventoryHistory::createRecord(
-                        $user->business_id,
-                        $salesOrderItem->product_id,
-                        $user->id,
-                        'stock-out',
-                        -$quantityShipped, // Negative for stock-out
-                        $quantityBefore,
-                        "Sales Shipment: {$shipmentNumber}",
-                        $shipment
-                    );
-                }
-
-                // Update shipment total amount
-                $shipment->update(['total_amount' => $shipmentTotal]);
-
-                // Update sales order status
-                $salesOrder->updateStatus();
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Sales order shipped successfully',
-                    'data' => [
-                        'shipment' => $shipment->load('items.salesOrderItem.product'),
-                        'sales_order' => $salesOrder->fresh()->load(['customer', 'items.product', 'shipments'])
-                    ]
-                ]);
-            });
-        } catch (\Exception $e) {
+            if (!$salesOrder) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to ship sales order',
-                'error' => $e->getMessage()
+                'message' => 'Sales order not found'
+            ], 404);
+            }
+
+            if (!in_array($salesOrder->status, ['pending', 'partial'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sales order must be pending or partial to ship'
+            ], 400);
+            }
+
+            // Generate shipment number if not provided
+            $shipmentNumber = $request->shipment_number ??
+            'SH-' . $salesOrder->id . '-' .
+            str_pad($salesOrder->shipments()->count() + 1, 3, '0', STR_PAD_LEFT);
+
+            // Create shipment
+            $shipment = SalesShipment::create([
+            'business_id' => $user->business_id,
+            'sales_order_id' => $salesOrder->id ?? null,
+            'shipment_number' => $shipmentNumber ?? null,
+            'shipped_date' => $request->shipped_date ?? now(),
+            'expected_delivery_date' => $request->expected_delivery_date ?? null,
+            'status' => 'shipped',
+            'tracking_number' => $request->tracking_number ?? null,
+            'notes' => $request->notes ?? null,
+            'created_by' => $user->id,
+            ]);
+
+            $shipmentTotal = 0;
+
+            // Process each item in the shipment
+            foreach ($request->items as $itemData) {
+            $salesOrderItem = SalesOrderItem::find($itemData['sales_order_item_id']);
+
+            if (!$salesOrderItem) {
+                throw new \Exception('Invalid sales order item');
+            }
+
+            $quantityShipped = $itemData['quantity_shipped'];
+            $unitPrice = $itemData['unit_price'];
+            $totalPrice = $quantityShipped * $unitPrice;
+            $shipmentTotal += $totalPrice;
+
+            // Check available quantity
+            $availableToShip = $salesOrderItem->quantity_ordered - $salesOrderItem->quantity_shipped;
+            if ($quantityShipped > $availableToShip) {
+                throw new \Exception("Cannot ship more than available quantity for item");
+            }
+
+            // Check stock availability
+            $product = Product::where('id', $salesOrderItem->product_id)
+                ->where('business_id', $user->business_id)
+                ->first();
+            
+            if (!$product) {
+                throw new \Exception("Product not found or doesn't belong to your business");
+            }
+            
+            if ($product->quantity < $quantityShipped) {
+                throw new \Exception("Insufficient stock for product: {$product->name}");
+            }
+
+            // Create shipment item
+            SalesShipmentItem::create([
+                'shipment_id' => $shipment->id,
+                'sales_order_item_id' => $salesOrderItem->id,
+                'quantity_shipped' => $quantityShipped,
+                'unit_price' => $unitPrice,
+                'total_price' => $totalPrice,
+                'notes' => $itemData['notes'] ?? null,
+            ]);
+
+            // Update sales order item quantities
+            $salesOrderItem->increment('quantity_shipped', $quantityShipped);
+
+            // Update product stock
+            $quantityBefore = $product->quantity;
+            $product->decrement('quantity', $quantityShipped);
+
+            // Record inventory history
+            InventoryHistory::createRecord(
+                $user->business_id,
+                $salesOrderItem->product_id,
+                $user->id,
+                'stock-out',
+                -$quantityShipped, // Negative for stock-out
+                $quantityBefore,
+                "Sales Shipment: {$shipmentNumber}",
+                $shipment
+            );
+            }
+
+            // Update shipment total amount
+            $shipment->update(['total_amount' => $shipmentTotal]);
+
+            // Update sales order status
+            $salesOrder->updateStatus();
+
+            return response()->json([
+            'success' => true,
+            'message' => 'Sales order shipped successfully',
+            'data' => [
+                'shipment' => $shipment->load('items.salesOrderItem.product'),
+                'sales_order' => $salesOrder->fresh()->load(['customer', 'items.product', 'shipments'])
+            ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+            'success' => false,
+            'message' => 'Failed to ship sales order',
+            'error' => $e->getMessage()
             ], 500);
         }
     }

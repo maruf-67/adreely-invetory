@@ -342,7 +342,7 @@ class PurchaseOrderController extends Controller
                 foreach ($request->items as $itemData) {
                     $purchaseOrderItem = PurchaseOrderItem::find($itemData['purchase_order_item_id']);
                     
-                    if (!$purchaseOrderItem || $purchaseOrderItem->purchase_order_id != $purchaseOrder->id) {
+                    if (!$purchaseOrderItem) {
                         throw new \Exception('Invalid purchase order item');
                     }
 
