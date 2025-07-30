@@ -58,7 +58,7 @@ class UserController extends Controller
         }
 
 
-        $users = $query->with('creator')->whereIn('user_type', ['supplier', 'retailer', 'dealer', 'wholesaler', 'guest'])->get();
+        $users = $query->with('creator')->whereIn('user_type', ['staff', 'supplier', 'retailer', 'dealer', 'wholesaler', 'guest'])->get();
 
         return response()->json([
             'success' => true,
@@ -73,6 +73,7 @@ class UserController extends Controller
      * - Validates user data
      * - Handles image upload
      * - Only admin and staff can create users
+     * - Supports employee-specific fields (join_date, salary_amount) for staff users
      *
      * Security considerations:
      * - Only admin and staff can create users
@@ -104,6 +105,9 @@ class UserController extends Controller
             'previous_due' => 'nullable|numeric|min:0',
             'previous_credit' => 'nullable|numeric|min:0',
             'password' => 'nullable|string|min:8',
+            // Employee-specific fields (for staff users)
+            'join_date' => 'nullable|date',
+            'salary_amount' => 'nullable|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -145,6 +149,12 @@ class UserController extends Controller
             'current_balance' => ($request->previous_credit ?? 0) - ($request->previous_due ?? 0),
             'created_by' => $currentUser->id,
         ];
+
+        // Add employee-specific fields for staff users
+        if ($request->user_type == 'staff') {
+            $userData['join_date'] = $request->join_date ?? null;
+            $userData['salary_amount'] = $request->salary_amount ?? null;
+        }
 
         // Only set password for staff users
         if ($request->user_type == 'staff' && $request->password) {
@@ -215,6 +225,7 @@ class UserController extends Controller
      * - Validates and updates user data
      * - Handles image upload and password update
      * - Only admin and staff can update users
+     * - Supports employee-specific fields (join_date, salary_amount) for staff users
      *
      * Security considerations:
      * - Only admin and staff can update users
@@ -271,6 +282,9 @@ class UserController extends Controller
             'previous_due' => 'nullable|numeric|min:0',
             'previous_credit' => 'nullable|numeric|min:0',
             'password' => 'nullable|string|min:8',
+            // Employee-specific fields (for staff users)
+            'join_date' => 'nullable|date',
+            'salary_amount' => 'nullable|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -284,6 +298,12 @@ class UserController extends Controller
         $updateData = $request->only([
             'name', 'phone', 'email', 'address', 'party_type', 'previous_due', 'previous_credit'
         ]);
+
+        // Add employee-specific fields for staff users
+        if ($user->user_type == 'staff') {
+            $employeeFields = $request->only(['join_date', 'salary_amount']);
+            $updateData = array_merge($updateData, $employeeFields);
+        }
 
         // Handle image upload and delete previous image
         if ($request->hasFile('image')) {

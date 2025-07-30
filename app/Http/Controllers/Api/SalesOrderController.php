@@ -145,13 +145,13 @@ class SalesOrderController extends Controller
                 $taxAmount = ($afterDiscount * $taxRate) / 100;
                 $totalAmount = $afterDiscount + $taxAmount;
 
-                // Create sales order with 'pending' status instead of 'pending'
+                // Create sales order with 'pending' status
                 $salesOrder = SalesOrder::create([
                     'business_id' => $user->business_id,
                     'customer_id' => $request->customer_id,
                     'order_date' => $request->order_date,
                     'expected_delivery_date' => $request->expected_delivery_date,
-                    'status' => 'completed',
+                    'status' => 'pending',
                     'sub_total' => $subTotal,
                     'discount' => $discountAmount,
                     'discount_type' => $discountType,
@@ -317,85 +317,6 @@ class SalesOrderController extends Controller
     }
 
     /**
-     * Confirm a sales order.
-     *
-     * Features:
-     * - Changes status from pending to confirmed
-     * - Generates invoice number
-     * - Validates stock availability
-     *
-     * @param int $id The sales order ID
-     * @return \Illuminate\Http\JsonResponse Confirmed sales order or error message
-     */
-    public function confirm($id): JsonResponse
-    {
-        $user = Auth::user();
-        $salesOrder = SalesOrder::where('business_id', $user->business_id)->find($id);
-
-        if (!$salesOrder) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sales order not found'
-            ], 404);
-        }
-
-        if ($salesOrder->status != 'pending') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sales order is not in pending status'
-            ], 400);
-        }
-
-        try {
-            return DB::transaction(function () use ($salesOrder, $user) {
-                // Check stock availability and deduct stock
-                foreach ($salesOrder->items as $item) {
-                    $product = Product::find($item->product_id);
-                    if ($product->quantity < $item->quantity_ordered) {
-                        throw new \Exception("Insufficient stock for product: {$product->name}. Available: {$product->quantity}, Required: {$item->quantity_ordered}");
-                    }
-                    
-                    // Deduct stock from product
-                    $quantityBefore = $product->quantity;
-                    $product->decrement('quantity', $item->quantity_ordered);
-                    
-                    // Record inventory history
-                    InventoryHistory::createRecord(
-                        $user->business_id,
-                        $item->product_id,
-                        $user->id,
-                        'stock-out',
-                        $item->quantity_ordered,
-                        $quantityBefore,
-                        "Sales Order Confirmed: {$salesOrder->order_number}",
-                        $salesOrder
-                    );
-                }
-
-                $salesOrder->update([
-                    'status' => 'confirmed',
-                    'updated_by' => $user->id,
-                ]);
-
-                // Generate invoice number
-                $salesOrder->generateInvoiceNumber();
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Sales order confirmed successfully and stock deducted',
-                    'data' => $salesOrder->fresh()
-                ]);
-            });
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to confirm sales order',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
      * Ship goods with shipment support.
      *
      * Features:
@@ -445,10 +366,10 @@ class SalesOrderController extends Controller
                     ], 404);
                 }
 
-                if (!in_array($salesOrder->status, ['partial', 'confirmed'])) {
+                if (!in_array($salesOrder->status, ['pending', 'partial'])) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Sales order must be confirmed before shipping'
+                        'message' => 'Sales order must be pending or partial to ship'
                     ], 400);
                 }
 
@@ -492,7 +413,14 @@ class SalesOrderController extends Controller
                     }
 
                     // Check stock availability
-                    $product = Product::find($salesOrderItem->product_id);
+                    $product = Product::where('id', $salesOrderItem->product_id)
+                        ->where('business_id', $user->business_id)
+                        ->first();
+                    
+                    if (!$product) {
+                        throw new \Exception("Product not found or doesn't belong to your business");
+                    }
+                    
                     if ($product->quantity < $quantityShipped) {
                         throw new \Exception("Insufficient stock for product: {$product->name}");
                     }
@@ -520,7 +448,7 @@ class SalesOrderController extends Controller
                         $salesOrderItem->product_id,
                         $user->id,
                         'stock-out',
-                        $quantityShipped,
+                        -$quantityShipped, // Negative for stock-out
                         $quantityBefore,
                         "Sales Shipment: {$shipmentNumber}",
                         $shipment
@@ -869,7 +797,7 @@ class SalesOrderController extends Controller
      * - Validates all item data before making changes
      *
      * Business Rules:
-     * - Only allows updates to orders with 'pending' or 'confirmed' status
+     * - Only allows updates to orders with 'pending' or 'partial' status
      * - Can modify items with shipped quantities, but cannot reduce quantity below shipped amount
      * - Prevents deletion of items with shipped quantities
      * - Automatically recalculates order totals based on item changes
@@ -960,32 +888,6 @@ class SalesOrderController extends Controller
                     ], 400);
                 }
 
-                // For confirmed orders, validate stock availability for quantity increases
-                if ($salesOrder->status == 'confirmed') {
-                    foreach ($request->items as $itemData) {
-                        $product = $validProducts[$itemData['product_id']];
-                        $existingItem = null;
-                        
-                        if (isset($itemData['id']) && $itemData['id']) {
-                            $existingItem = $salesOrder->items()->where('id', $itemData['id'])->first();
-                        }
-                        
-                        $currentQuantity = $existingItem ? $existingItem->quantity_ordered : 0;
-                        $newQuantity = $itemData['quantity_ordered'];
-                        $quantityIncrease = $newQuantity - $currentQuantity;
-                        
-                        // Only check stock if quantity is increasing
-                        if ($quantityIncrease > 0) {
-                            if ($product->quantity < $quantityIncrease) {
-                                return response()->json([
-                                    'success' => false,
-                                    'message' => "Insufficient stock for product: {$product->name}. Available: {$product->quantity}, Additional needed: {$quantityIncrease}"
-                                ], 400);
-                            }
-                        }
-                    }
-                }
-
                 // Get existing items IDs that will be updated
                 $updatingItemIds = collect($request->items)
                     ->pluck('id')
@@ -1029,27 +931,8 @@ class SalesOrderController extends Controller
                     ], 400);
                 }
 
-                // Delete items that are no longer needed and restore stock for confirmed orders
+                // Delete items that are no longer needed
                 foreach ($itemsToDelete as $item) {
-                    // For confirmed orders, restore stock when deleting items
-                    if ($salesOrder->status == 'confirmed') {
-                        $product = Product::find($item->product_id);
-                        $quantityBefore = $product->quantity;
-                        $product->increment('quantity', $item->quantity_ordered);
-
-                        // Record inventory history
-                        InventoryHistory::createRecord(
-                            $user->business_id,
-                            $item->product_id,
-                            $user->id,
-                            'stock-in',
-                            $item->quantity_ordered,
-                            $quantityBefore,
-                            "Sales Order Item Removed: {$salesOrder->order_number}",
-                            $salesOrder
-                        );
-                    }
-                    
                     $item->delete();
                 }
 
@@ -1067,40 +950,6 @@ class SalesOrderController extends Controller
                             ->first();
 
                         if ($existingItem) {
-                            $oldQuantity = $existingItem->quantity_ordered;
-                            $newQuantity = $itemData['quantity_ordered'];
-                            $quantityDifference = $newQuantity - $oldQuantity;
-
-                            // For confirmed orders, adjust stock based on quantity changes
-                            if ($salesOrder->status == 'confirmed' && $quantityDifference != 0) {
-                                $product = Product::find($itemData['product_id']);
-                                $quantityBefore = $product->quantity;
-
-                                if ($quantityDifference > 0) {
-                                    // Quantity increased - deduct more stock
-                                    $product->decrement('quantity', $quantityDifference);
-                                    $historyReason = "Sales Order Item Updated - Quantity Increased: {$salesOrder->order_number}";
-                                    $historyType = 'stock-out';
-                                } else {
-                                    // Quantity decreased - return stock
-                                    $product->increment('quantity', abs($quantityDifference));
-                                    $historyReason = "Sales Order Item Updated - Quantity Decreased: {$salesOrder->order_number}";
-                                    $historyType = 'stock-in';
-                                }
-
-                                // Record inventory history
-                                InventoryHistory::createRecord(
-                                    $user->business_id,
-                                    $itemData['product_id'],
-                                    $user->id,
-                                    $historyType,
-                                    abs($quantityDifference),
-                                    $quantityBefore,
-                                    $historyReason,
-                                    $salesOrder
-                                );
-                            }
-
                             $existingItem->update([
                                 'product_id' => $itemData['product_id'],
                                 'quantity_ordered' => $itemData['quantity_ordered'],
@@ -1112,7 +961,7 @@ class SalesOrderController extends Controller
                         }
                     } else {
                         // Create new item
-                        $newItem = SalesOrderItem::create([
+                        SalesOrderItem::create([
                             'sales_order_id' => $salesOrder->id,
                             'product_id' => $itemData['product_id'],
                             'quantity_ordered' => $itemData['quantity_ordered'],
@@ -1121,25 +970,6 @@ class SalesOrderController extends Controller
                             'notes' => $itemData['notes'] ?? null,
                             'created_by' => $user->id,
                         ]);
-
-                        // For confirmed orders, deduct stock for new items
-                        if ($salesOrder->status == 'confirmed') {
-                            $product = Product::find($itemData['product_id']);
-                            $quantityBefore = $product->quantity;
-                            $product->decrement('quantity', $itemData['quantity_ordered']);
-
-                            // Record inventory history
-                            InventoryHistory::createRecord(
-                                $user->business_id,
-                                $itemData['product_id'],
-                                $user->id,
-                                'stock-out',
-                                $itemData['quantity_ordered'],
-                                $quantityBefore,
-                                "Sales Order New Item Added: {$salesOrder->order_number}",
-                                $salesOrder
-                            );
-                        }
                     }
                 }
 
@@ -1212,26 +1042,32 @@ class SalesOrderController extends Controller
         }
 
         // Handle customer balance for overpayment
-        // In sales, overpayment creates a CREDIT for the customer (business owes them)
         if ($overpaymentAmount > 0) {
-            UserBalance::updateOrCreate(
-                [
-                    'business_id' => $salesOrder->business_id,
-                    'user_id' => $salesOrder->customer_id,
-                ],
-                []
-            )->increment('current_balance', $overpaymentAmount);
-
-            // Log the balance change
-            UserBalance::logBalanceChange(
-                $salesOrder->business_id,
-                $salesOrder->customer_id,
-                $overpaymentAmount,
-                'credit_adjustment',
-                "Overpayment from sales order #{$salesOrder->order_number}",
-                $salesOrder->id,
-                SalesOrder::class
-            );
+            // Calculate how much overpayment this specific payment contributed
+            $previousClearedPayments = $salesOrder->payments()
+                ->where('status', 'clear')
+                ->where('id', '!=', $payment->id)
+                ->sum('amount');
+            
+            $previousOverpay = max(0, $previousClearedPayments - $totalAmount);
+            $newOverpayFromThisPayment = $overpaymentAmount - $previousOverpay;
+            
+            if ($newOverpayFromThisPayment > 0) {
+                // Update customer balance (positive = business owes customer)
+                $customer = $salesOrder->customer;
+                $customer->increment('current_balance', $newOverpayFromThisPayment);
+                
+                // Create balance history record
+                UserBalance::createRecord(
+                    $salesOrder->business_id,
+                    $customer->id,
+                    'credit',
+                    $newOverpayFromThisPayment,
+                    "Overpayment from Sales Order #{$salesOrder->order_number} - Payment #{$payment->id}",
+                    $payment,
+                    $payment->reference_number
+                );
+            }
         }
 
         return [
@@ -1278,23 +1114,18 @@ class SalesOrderController extends Controller
         // Handle customer balance reversal
         // In sales, reducing overpayment reduces customer credit (business owes them less)
         if ($overpayReduction > 0) {
-            UserBalance::updateOrCreate(
-                [
-                    'business_id' => $salesOrder->business_id,
-                    'user_id' => $salesOrder->customer_id,
-                ],
-                []
-            )->decrement('current_balance', $overpayReduction);
+            $customer = $salesOrder->customer;
+            $customer->decrement('current_balance', $overpayReduction);
 
-            // Log the balance change
-            UserBalance::logBalanceChange(
+            // Create balance history record
+            UserBalance::createRecord(
                 $salesOrder->business_id,
                 $salesOrder->customer_id,
-                -$overpayReduction,
-                'debit_adjustment',
-                "Payment reversal from sales order #{$salesOrder->order_number}",
-                $salesOrder->id,
-                SalesOrder::class
+                'debit',
+                $overpayReduction,
+                "Payment reversal from Sales Order #{$salesOrder->order_number} - Payment #{$payment->id}",
+                $payment,
+                $payment->reference_number
             );
         }
 

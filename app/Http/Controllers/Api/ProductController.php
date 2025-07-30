@@ -94,7 +94,6 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
-            'quantity' => 'integer|min:0',
             'low_stock_threshold' => 'integer|min:0',
         ]);
 
@@ -168,7 +167,7 @@ class ProductController extends Controller
             'description' => $request->description,
             'purchase_price' => $request->purchase_price,
             'selling_price' => $request->selling_price,
-            'quantity' => $request->quantity ?? 0,
+            'quantity' => 0, // Always start with 0, quantity comes from purchases
             'low_stock_threshold' => $request->low_stock_threshold ?? 0,
         ]);
 
@@ -255,7 +254,6 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'purchase_price' => 'sometimes|required|numeric|min:0',
             'selling_price' => 'sometimes|required|numeric|min:0',
-            'quantity' => 'integer|min:0',
             'low_stock_threshold' => 'integer|min:0',
         ]);
 
@@ -310,7 +308,7 @@ class ProductController extends Controller
 
         $updateData = $request->only([
             'name', 'sku', 'category_id', 'brand_id', 'unit_id', 'buying_unit_id',
-            'description', 'purchase_price', 'selling_price', 'quantity', 'low_stock_threshold'
+            'description', 'purchase_price', 'selling_price', 'low_stock_threshold'
         ]);
 
         // Handle image upload and delete previous image
@@ -365,11 +363,13 @@ class ProductController extends Controller
             ], 404);
         }
 
-        // Check if product has order items
-        if ($product->purchaseOrderItems()->count() > 0 || $product->salesOrderItems()->count() > 0) {
+        // Check if product has order items or inventory history
+        if ($product->purchaseOrderItems()->count() > 0 || 
+            $product->salesOrderItems()->count() > 0 || 
+            $product->inventoryHistories()->count() > 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete product that has order history'
+                'message' => 'Cannot delete product that has transaction history'
             ], 400);
         }
 
@@ -457,8 +457,8 @@ class ProductController extends Controller
             ], 404);
         }
         $validated = $request->validate([
-            'quantity' => 'required|integer',
-            'reason' => 'required|string|max:255',
+            'quantity' => 'required|integer|min:0',
+            'reason' => 'required|string|min:10|max:255', // Minimum 10 characters for meaningful reason
         ]);
         $before = $product->quantity;
         $after = $validated['quantity'];
@@ -473,7 +473,7 @@ class ProductController extends Controller
             'quantity_change' => $change,
             'quantity_before' => $before,
             'quantity_after' => $after,
-            'reason' => $validated['reason'],
+            'reason' => "Manual Adjustment: {$validated['reason']}",
             'reference_type' => null,
             'reference_id' => null,
         ]);

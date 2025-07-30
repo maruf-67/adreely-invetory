@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('business_id')->constrained()->onDelete('cascade');
             $table->foreignId('employee_id')->constrained('users')->onDelete('cascade');
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 15, 2); // Actual payment amount
             $table->enum('type', ['salary', 'advance', 'bonus', 'deduction'])->default('salary');
             $table->date('payment_date');
             $table->date('salary_month'); // Which month/period this salary is for

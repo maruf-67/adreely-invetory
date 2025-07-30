@@ -124,7 +124,7 @@ class SalesOrder extends Model
      */
     public function generateInvoiceNumber(): void
     {
-        if (!$this->invoice_number && in_array($this->status, ['confirmed', 'shipped', 'delivered', 'completed'])) {
+        if (!$this->invoice_number && in_array($this->status, ['partial', 'shipped', 'delivered', 'completed'])) {
             $date = now()->format('Ymd');
             $lastInvoice = static::where('business_id', $this->business_id)
                 ->where('invoice_number', 'like', "INV-{$date}-%")
@@ -165,11 +165,9 @@ class SalesOrder extends Model
         } elseif ($totalDelivered >= $totalOrdered) {
             $status = 'delivered';
         } elseif ($totalShipped > 0) {
-            $status = 'shipped';
-        } elseif ($this->status == 'draft') {
-            $status = 'draft';
+            $status = 'partial';
         } else {
-            $status = 'confirmed';
+            $status = 'pending';
         }
 
         $this->update(['status' => $status]);

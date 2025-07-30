@@ -121,6 +121,19 @@ class PurchaseOrderController extends Controller
                     ], 400);
                 }
 
+                // Verify all products belong to the business
+                $productIds = collect($request->items)->pluck('product_id');
+                $validProducts = Product::where('business_id', $user->business_id)
+                    ->whereIn('id', $productIds)
+                    ->pluck('id');
+
+                if ($productIds->diff($validProducts)->count() > 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'One or more products do not belong to your business'
+                    ], 400);
+                }
+
                 // Calculate totals
                 $subTotal = 0;
                 foreach ($request->items as $item) {
@@ -349,7 +362,14 @@ class PurchaseOrderController extends Controller
                     ]);
 
                     // Update product stock
-                    $product = Product::find($purchaseOrderItem->product_id);
+                    $product = Product::where('id', $purchaseOrderItem->product_id)
+                        ->where('business_id', $user->business_id)
+                        ->first();
+                    
+                    if (!$product) {
+                        throw new \Exception("Product not found or doesn't belong to your business");
+                    }
+                    
                     $quantityBefore = $product->quantity;
                     $product->increment('quantity', $quantityReceived);
 

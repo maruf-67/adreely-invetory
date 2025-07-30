@@ -33,6 +33,8 @@ class User extends Authenticatable
         'current_balance',
         'user_type',
         'party_type',
+        'join_date',        // Employee joining date
+        'salary_amount',    // Employee base salary amount
         'password',
         'created_by',
         'email_verified_at', // keep for future reference
@@ -61,6 +63,8 @@ class User extends Authenticatable
             'previous_due' => 'decimal:2',
             'previous_credit' => 'decimal:2',
             'current_balance' => 'decimal:2',
+            'join_date' => 'date',
+            'salary_amount' => 'decimal:2',
         ];
     }
 

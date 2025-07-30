@@ -153,7 +153,7 @@ class UserBalanceController extends Controller
     }
 
     /**
-     * Get balance summary for all users in the business.
+     * Get balance summary for all users in the business grouped by user_type.
      */
     public function getBusinessBalanceSummary(Request $request): JsonResponse
     {
@@ -169,41 +169,68 @@ class UserBalanceController extends Controller
 
         $users = $query->get();
 
-        $balanceSummary = $users->map(function ($user) {
-            $balanceStatus = $user->getBalanceStatus();
-            return [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'user_type' => $user->user_type,
-                    'party_type' => $user->party_type,
+        // Group users by user_type
+        $usersByType = $users->groupBy('user_type');
+
+        $groupedSummary = [];
+        $overallTotals = [
+            'total_credit' => 0,
+            'total_due' => 0,
+            'net_balance' => 0,
+            'total_users' => 0
+        ];
+
+        foreach ($usersByType as $userType => $typeUsers) {
+            $balanceSummary = $typeUsers->map(function ($user) {
+                $balanceStatus = $user->getBalanceStatus();
+                return [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'user_type' => $user->user_type,
+                        'party_type' => $user->party_type,
+                    ],
+                    'balance' => $balanceStatus
+                ];
+            });
+
+            // Calculate totals for this user type
+            $creditUsers = $balanceSummary->where('balance.status', 'credit');
+            $dueUsers = $balanceSummary->where('balance.status', 'due');
+            
+            $totalCredit = $creditUsers->sum('balance.absolute_amount');
+            $totalDue = $dueUsers->sum('balance.absolute_amount');
+            $netBalance = $totalDue - $totalCredit;
+
+            $groupedSummary[$userType] = [
+                'user_type' => $userType,
+                'total_users' => $typeUsers->count(),
+                'users_with_credit' => $creditUsers->count(),
+                'users_with_due' => $dueUsers->count(),
+                'users_with_zero_balance' => $balanceSummary->where('balance.status', 'balanced')->count(),
+                'totals' => [
+                    'total_credit' => $totalCredit,
+                    'total_due' => $totalDue,
+                    'net_balance' => $netBalance
                 ],
-                'balance' => $balanceStatus
+                'users' => $balanceSummary->values()
             ];
-        });
 
-        // Separate suppliers and customers with balances
-        $suppliers = $balanceSummary->filter(fn($item) => $item['user']['user_type'] == 'supplier');
-        $customers = $balanceSummary->filter(fn($item) => $item['user']['user_type'] == 'customer');
+            // Add to overall totals
+            $overallTotals['total_credit'] += $totalCredit;
+            $overallTotals['total_due'] += $totalDue;
+            $overallTotals['total_users'] += $typeUsers->count();
+        }
 
-        // Calculate totals
-        $totalSupplierCredit = $suppliers->where('balance.status', 'credit')->sum('balance.absolute_amount');
-        $totalSupplierDue = $suppliers->where('balance.status', 'due')->sum('balance.absolute_amount');
-        $totalCustomerCredit = $customers->where('balance.status', 'credit')->sum('balance.absolute_amount');
-        $totalCustomerDue = $customers->where('balance.status', 'due')->sum('balance.absolute_amount');
+        $overallTotals['net_balance'] = $overallTotals['total_due'] - $overallTotals['total_credit'];
 
         return response()->json([
             'success' => true,
             'data' => [
-                'summary' => [
-                    'total_supplier_credit' => $totalSupplierCredit,
-                    'total_supplier_due' => $totalSupplierDue,
-                    'total_customer_credit' => $totalCustomerCredit,
-                    'total_customer_due' => $totalCustomerDue,
-                    'net_balance' => ($totalCustomerDue + $totalSupplierCredit) - ($totalCustomerCredit + $totalSupplierDue)
-                ],
-                'suppliers' => $suppliers->values(),
-                'customers' => $customers->values()
+                'overall_summary' => $overallTotals,
+                'user_types' => array_keys($usersByType->toArray()),
+                'grouped_by_type' => $groupedSummary,
+                'total_user_types' => count($usersByType)
             ]
         ]);
     }

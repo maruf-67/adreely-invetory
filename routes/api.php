@@ -28,7 +28,7 @@ Route::prefix('auth')->group(function () {
 });
 
 // Protected routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'business'])->group(function () {
     // Auth routes
     Route::prefix('auth')->group(function () {
         Route::get('/profile', [AuthController::class, 'profile']);
@@ -152,7 +152,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [SalesOrderController::class, 'show']);
         Route::put('/update/{id}', [SalesOrderController::class, 'update']);
         Route::put('/{id}/items', [SalesOrderController::class, 'updateItems']);
-        Route::put('/{id}/confirm', [SalesOrderController::class, 'confirm']);
         
         // Shipment management
         Route::post('/{id}/ship', [SalesOrderController::class, 'ship']);
@@ -188,6 +187,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('reports')->group(function () {
         Route::get('/daily-transaction', [ReportController::class, 'dailyTransaction']);
         Route::get('/daily-income-expense', [ReportController::class, 'dailyIncomeExpense']);
+        Route::get('/sales', [ReportController::class, 'salesReport']);
+        Route::get('/purchase', [ReportController::class, 'purchaseReport']);
+        Route::get('/inventory', [ReportController::class, 'inventoryReport']);
+        Route::get('/profit-loss', [ReportController::class, 'profitLossReport']);
     });
 
     // Employee Management
