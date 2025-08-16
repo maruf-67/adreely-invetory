@@ -613,6 +613,9 @@ class SalesOrderController extends Controller
                     'data' => [
                         'payment' => $payment->load('paymentMethod'),
                         'sales_order' => $salesOrder->fresh(),
+                        'customer_balance' => $overpaymentInfo['customer_balance'] ?? null,
+                        'business_owner_balance' => $overpaymentInfo['business_owner_balance'] ?? null,
+                        'payment_method_balance' => $payment->paymentMethod->fresh()->balance,
                         'overpayment_info' => $overpaymentInfo ?? null
                     ]
                 ]);
@@ -1027,7 +1030,46 @@ class SalesOrderController extends Controller
      */
     private function handleClearedPaymentEffect(SalesOrder $salesOrder, Payment $payment): array
     {
-        // Recalculate sales order paid amount (only cleared payments)
+        // Get payment method for balance adjustment
+        $paymentMethod = $payment->paymentMethod;
+        $paymentAmount = $payment->amount;
+        $businessOwner = $salesOrder->business->owner ?? Auth::user();
+        $customer = $salesOrder->customer;
+        
+        // Step 1: Handle payment method balance adjustment (credit for sales order payment)
+        $paymentMethod->adjustBalance(
+            $paymentAmount,
+            "Sales Order Payment #{$salesOrder->order_number}",
+            $payment,
+            $payment->reference_number
+        );
+        
+        // Step 2: Main Balance Transfer - Customer → Business Owner
+        // Debit customer balance
+        User::where('id', $customer->id)->decrement('current_balance', $paymentAmount);
+        UserBalance::createRecord(
+            $salesOrder->business_id,
+            $customer->id,
+            'debit',
+            $paymentAmount,
+            "Sales Order Payment #{$salesOrder->order_number} to {$businessOwner->name}",
+            $payment,
+            $payment->reference_number
+        );
+        
+        // Credit business owner balance
+        User::where('id', $businessOwner->id)->increment('current_balance', $paymentAmount);
+        UserBalance::createRecord(
+            $salesOrder->business_id,
+            $businessOwner->id,
+            'credit',
+            $paymentAmount,
+            "Sales Order Payment #{$salesOrder->order_number} from {$customer->name}",
+            $payment,
+            $payment->reference_number
+        );
+        
+        // Step 3: Recalculate sales order paid amount (only cleared payments)
         $salesOrder->updatePaidAmount();
 
         // Calculate current totals
@@ -1040,7 +1082,7 @@ class SalesOrderController extends Controller
             $salesOrder->update(['extra_amount' => $overpaymentAmount]);
         }
 
-        // Handle customer balance for overpayment
+        // Step 4: Handle additional overpayment (customer gets extra credit)
         if ($overpaymentAmount > 0) {
             // Calculate how much overpayment this specific payment contributed
             $previousClearedPayments = $salesOrder->payments()
@@ -1052,17 +1094,14 @@ class SalesOrderController extends Controller
             $newOverpayFromThisPayment = $overpaymentAmount - $previousOverpay;
             
             if ($newOverpayFromThisPayment > 0) {
-                // Update customer balance (positive = business owes customer)
-                $customer = $salesOrder->customer;
-                $customer->increment('current_balance', $newOverpayFromThisPayment);
-                
-                // Create balance history record
+                // Additional customer credit for overpayment (business owes customer)
+                User::where('id', $customer->id)->increment('current_balance', $newOverpayFromThisPayment);
                 UserBalance::createRecord(
                     $salesOrder->business_id,
                     $customer->id,
                     'credit',
                     $newOverpayFromThisPayment,
-                    "Overpayment from Sales Order #{$salesOrder->order_number} - Payment #{$payment->id}",
+                    "Overpayment Credit from Sales Order #{$salesOrder->order_number} - Payment #{$payment->id}",
                     $payment,
                     $payment->reference_number
                 );
@@ -1073,6 +1112,9 @@ class SalesOrderController extends Controller
             'overpayment_amount' => $overpaymentAmount,
             'total_cleared_payments' => $clearedPayments,
             'order_total' => $totalAmount,
+            'customer_balance' => User::find($customer->id)->current_balance,
+            'business_owner_balance' => User::find($businessOwner->id)->current_balance,
+            'payment_method_balance' => $paymentMethod->fresh()->balance,
             'balance_effect' => $overpaymentAmount > 0 ? 'customer_credit_increased' : 'no_balance_change'
         ];
     }

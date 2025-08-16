@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 class PaymentMethod extends Model
 {
@@ -25,6 +26,7 @@ class PaymentMethod extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'details' => 'array',
+        'balance' => 'decimal:2',
     ];
 
     /**
@@ -65,5 +67,35 @@ class PaymentMethod extends Model
     public function scopeOfType($query, $type)
     {
         return $query->where('type', $type);
+    }
+
+    /**
+     * Adjust payment method balance (without creating user balance history).
+     * User balance adjustments should be handled separately in the business logic.
+     * 
+     * @param float $amount Amount to adjust (positive for credit, negative for debit)
+     * @param string $description Description for the transaction
+     * @param Model $reference Reference model for the transaction
+     * @param string $referenceNumber Optional reference number
+     * @return void
+     */
+    public function adjustBalance(float $amount, string $description, $reference = null, string $referenceNumber = null): void
+    {
+        $previousBalance = $this->balance;
+        $newBalance = $previousBalance + $amount;
+        
+        // Update the payment method balance only
+        $this->update(['balance' => $newBalance]);
+    }
+
+    /**
+     * Check if payment method has sufficient balance for a transaction.
+     * 
+     * @param float $amount Amount to check
+     * @return bool
+     */
+    public function hasSufficientBalance(float $amount): bool
+    {
+        return $this->balance >= $amount;
     }
 }

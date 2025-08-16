@@ -93,7 +93,9 @@ class SalesOrder extends Model
      */
     public function getDueAmountAttribute(): float
     {
-        return $this->total_amount - $this->paid_amount;
+        // Only consider cleared payments for due amount calculation
+        $clearedPayments = $this->payments()->where('status', 'clear')->sum('amount');
+        return max(0, $this->total_amount - $clearedPayments);
     }
 
     /**
@@ -158,12 +160,11 @@ class SalesOrder extends Model
     {
         $totalOrdered = $this->items()->sum('quantity_ordered');
         $totalShipped = $this->items()->sum('quantity_shipped');
-        $totalDelivered = $this->items()->sum('quantity_delivered');
 
-        if ($totalDelivered >= $totalOrdered && $this->paid_amount >= $this->total_amount) {
+        if ($totalShipped >= $totalOrdered && $this->paid_amount >= $this->total_amount) {
             $status = 'completed';
-        } elseif ($totalDelivered >= $totalOrdered) {
-            $status = 'delivered';
+        } elseif ($totalShipped >= $totalOrdered) {
+            $status = 'shipped'; // Changed from 'delivered' to 'shipped'
         } elseif ($totalShipped > 0) {
             $status = 'partial';
         } else {

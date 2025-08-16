@@ -538,7 +538,7 @@ class PurchaseOrderController extends Controller
                         $message = "Payment added successfully with overpayment of " . number_format($balanceEffect['overpayment_amount'], 2) . " added to supplier balance";
                     }
                 } else {
-                    // For non-cleared payments, just update the purchase order paid amount
+                    // For non-cleared payments, just update the purchase order totals
                     $purchaseOrder->updatePaidAmount();
                     $message = "Payment added as {$paymentStatus}. Order balance will be updated when payment is cleared.";
                     
@@ -560,6 +560,8 @@ class PurchaseOrderController extends Controller
                         'payment_status' => $paymentStatus,
                         'overpayment_amount' => $balanceEffect['overpayment_amount'],
                         'supplier_balance' => $balanceEffect['supplier_balance'],
+                        'business_owner_balance' => $balanceEffect['business_owner_balance'] ?? null,
+                        'payment_method_balance' => $balanceEffect['payment_method_balance'] ?? $payment->paymentMethod->fresh()->balance,
                         'cleared_payments_total' => $balanceEffect['cleared_total'],
                         'pending_payments_total' => $purchaseOrder->payments()->where('status', Payment::STATUS_PENDING)->sum('amount'),
                         'remaining_due' => $balanceEffect['remaining_due']
@@ -952,7 +954,69 @@ class PurchaseOrderController extends Controller
      */
     private function handleClearedPaymentEffect(PurchaseOrder $purchaseOrder, Payment $payment): array
     {
-        // Recalculate purchase order paid amount (only cleared payments)
+        // Get payment method for balance adjustment
+        $paymentMethod = $payment->paymentMethod;
+        $paymentAmount = $payment->amount;
+        $businessOwner = $purchaseOrder->business->owner ?? Auth::user();
+        $supplier = $purchaseOrder->supplier;
+        
+        // Step 1: Handle payment method balance adjustment (debit for purchase order payment)
+        if ($paymentMethod->hasSufficientBalance($paymentAmount)) {
+            $paymentMethod->adjustBalance(
+                -$paymentAmount,
+                "Purchase Order Payment #{$purchaseOrder->order_number}",
+                $payment,
+                $payment->reference_number
+            );
+        } else {
+            // Insufficient balance - create debt
+            $shortfall = $paymentAmount - $paymentMethod->balance;
+            
+            // Deduct available balance first
+            if ($paymentMethod->balance > 0) {
+                $paymentMethod->adjustBalance(
+                    -$paymentMethod->balance,
+                    "Partial Purchase Order Payment #{$purchaseOrder->order_number}",
+                    $payment,
+                    $payment->reference_number
+                );
+            }
+            
+            // Create debt for the shortfall
+            $paymentMethod->adjustBalance(
+                -$shortfall,
+                "Purchase Order Payment Debt #{$purchaseOrder->order_number}",
+                $payment,
+                $payment->reference_number
+            );
+        }
+        
+        // Step 2: Main Balance Transfer - Business Owner → Supplier
+        // Debit business owner balance
+        User::where('id', $businessOwner->id)->decrement('current_balance', $paymentAmount);
+        UserBalance::createRecord(
+            $purchaseOrder->business_id,
+            $businessOwner->id,
+            'debit',
+            $paymentAmount,
+            "Purchase Order Payment #{$purchaseOrder->order_number} to {$supplier->name}",
+            $payment,
+            $payment->reference_number
+        );
+        
+        // Credit supplier balance
+        User::where('id', $supplier->id)->increment('current_balance', $paymentAmount);
+        UserBalance::createRecord(
+            $purchaseOrder->business_id,
+            $supplier->id,
+            'credit',
+            $paymentAmount,
+            "Purchase Order Payment #{$purchaseOrder->order_number} from {$businessOwner->name}",
+            $payment,
+            $payment->reference_number
+        );
+        
+        // Step 3: Update purchase order paid amount and extra_amount
         $purchaseOrder->updatePaidAmount();
         
         // Calculate current totals
@@ -960,10 +1024,7 @@ class PurchaseOrderController extends Controller
         $totalAmount = $purchaseOrder->total_amount;
         $overpaymentAmount = max(0, $clearedPayments - $totalAmount);
         
-        // Update purchase order extra_amount field
-        $purchaseOrder->update(['extra_amount' => $overpaymentAmount]);
-        
-        // Handle supplier balance for overpayment
+        // Step 4: Handle additional overpayment beyond what was already handled
         if ($overpaymentAmount > 0) {
             // Calculate how much overpayment this specific payment contributed
             $previousClearedPayments = $purchaseOrder->payments()
@@ -974,29 +1035,17 @@ class PurchaseOrderController extends Controller
             $previousOverpay = max(0, $previousClearedPayments - $totalAmount);
             $newOverpayFromThisPayment = $overpaymentAmount - $previousOverpay;
             
-            if ($newOverpayFromThisPayment > 0) {
-                // Update supplier balance
-                $supplier = $purchaseOrder->supplier;
-                $supplier->increment('current_balance', $newOverpayFromThisPayment);
-                
-                // Create balance history record
-                UserBalance::createRecord(
-                    $purchaseOrder->business_id,
-                    $supplier->id,
-                    'credit',
-                    $newOverpayFromThisPayment,
-                    "Overpayment from Purchase Order #{$purchaseOrder->order_number} - Payment #{$payment->id}",
-                    $payment,
-                    $payment->reference_number
-                );
-            }
+            // Note: Overpayment is already handled in the main transfer above
+            // This section would only apply if there are additional overpayment rules
         }
         
         return [
             'overpayment_amount' => $overpaymentAmount,
             'cleared_total' => $clearedPayments,
             'remaining_due' => max(0, $totalAmount - $clearedPayments),
-            'supplier_balance' => $purchaseOrder->supplier->fresh()->current_balance
+            'supplier_balance' => User::find($supplier->id)->current_balance,
+            'business_owner_balance' => User::find($businessOwner->id)->current_balance,
+            'payment_method_balance' => $paymentMethod->fresh()->balance
         ];
     }
 

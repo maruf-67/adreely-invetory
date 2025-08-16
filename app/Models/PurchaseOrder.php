@@ -45,7 +45,9 @@ class PurchaseOrder extends Model
 
     public function getDueAmountAttribute()
     {
-        return $this->total_amount - $this->paid_amount;
+        // Only consider cleared payments for due amount calculation
+        $clearedPayments = $this->payments()->where('status', Payment::STATUS_CLEAR)->sum('amount');
+        return max(0, $this->total_amount - $clearedPayments);
     }
 
     /**
@@ -139,8 +141,10 @@ class PurchaseOrder extends Model
         $totalPaid = $this->payments()->where('status', 'clear')->sum('amount');
         $this->update(['paid_amount' => $totalPaid]);
         
-        // Handle overpayment
-        $this->handleOverpayment();
+        // Calculate and update extra_amount but don't handle supplier balance here
+        // Supplier balance should be handled explicitly in payment controllers
+        $extraAmount = max(0, $totalPaid - $this->total_amount);
+        $this->update(['extra_amount' => $extraAmount]);
     }
 
     /**
