@@ -120,19 +120,30 @@ class UserBalanceController extends Controller
                     ], 404);
                 }
 
+                // Capture the previous balance before updating
+                $previousBalance = $user->current_balance;
+
                 // Update user balance
                 $user->updateBalance($request->amount, $request->balance_type);
 
-                // Create balance record
-                $balanceRecord = UserBalance::createRecord(
-                    $authUser->business_id,
-                    $userId,
-                    $request->balance_type,
-                    $request->amount,
-                    $request->description,
-                    null,
-                    $request->reference_number
-                );
+                // Create balance record - use the user as reference for manual adjustments
+                $balanceRecord = UserBalance::create([
+                    'business_id' => $authUser->business_id,
+                    'user_id' => $userId,
+                    'balanceable_type' => get_class($user),
+                    'balanceable_id' => $user->id,
+                    'amount' => $request->amount,
+                    'balance_type' => $request->balance_type,
+                    'previous_balance' => $previousBalance,
+                    'new_balance' => $request->balance_type == 'credit' 
+                        ? $previousBalance + $request->amount 
+                        : $previousBalance - $request->amount,
+                    'description' => $request->description,
+                    'transaction_date' => now()->toDateString(),
+                    'reference_number' => $request->reference_number,
+                    'created_by' => $authUser->id,
+                    'updated_by' => $authUser->id,
+                ]);
 
                 return response()->json([
                     'success' => true,
